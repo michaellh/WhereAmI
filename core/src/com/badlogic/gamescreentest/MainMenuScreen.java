@@ -20,19 +20,16 @@ public class MainMenuScreen implements Screen, InputProcessor {
     OrthographicCamera camera;
     Stage stage;
 
+    private MainMenuBackGround backGround;
+    private MainMenuCont contButton;
+    private MainMenuQuit quitButton;
+    private MainMenuNewGame newGameButton;
+
     Vector2 storeTouch;
     float cellWidth;
     float cellHeight;
     float screenWidth;
     float screenHeight;
-
-    private Sprite backGround;
-    private Sprite sadFace;
-    private Sprite neutralFace;
-    private Sprite happyFace;
-
-    private MainMenuNewGame newGameButton;
-    private MainMenuQuit quitButton;
 
     public MainMenuScreen(final GameScreen gam) {
         screenWidth = Gdx.graphics.getWidth();
@@ -44,27 +41,14 @@ public class MainMenuScreen implements Screen, InputProcessor {
         camera = new OrthographicCamera();
         stage = new Stage(new ScreenViewport(camera), game.batch);
 
-        backGround = new Sprite(new Texture(Gdx.files.internal("ugly face sean.jpg")));
-        backGround.setPosition(0, 0);
-        backGround.setSize(cellWidth * 5, cellHeight * 3);
-        //stage.addActor(backGround);
-/*
-        neutralFace = new Sprite(new Texture(Gdx.files.internal("neutralface.jpg")));
-        neutralFace.setPosition(cellWidth * 1, cellHeight);
-        neutralFace.setSize(cellWidth, cellHeight);
-
-        sadFace = new Sprite(new Texture(Gdx.files.internal("sadface.jpg")));
-        sadFace.setPosition(cellWidth * 2, cellHeight);
-        sadFace.setSize(cellWidth, cellHeight);
-*/
-        newGameButton = new MainMenuNewGame(cellWidth, cellHeight);
+        backGround = new MainMenuBackGround(cellWidth, cellHeight);
+        contButton = new MainMenuCont(cellWidth, cellHeight);
         quitButton = new MainMenuQuit(cellWidth, cellHeight);
-        stage.addActor(newGameButton);
+        newGameButton = new MainMenuNewGame(cellWidth, cellHeight);
+        stage.addActor(backGround);
+        stage.addActor(contButton);
         stage.addActor(quitButton);
-
-        happyFace = new Sprite(new Texture(Gdx.files.internal("happyface.jpg")));
-        happyFace.setPosition(cellWidth * 3, cellHeight);
-        happyFace.setSize(cellWidth, cellHeight);
+        stage.addActor(newGameButton);
 
         InputMultiplexer im = new InputMultiplexer(stage, this);
         Gdx.input.setInputProcessor(im);
@@ -74,15 +58,40 @@ public class MainMenuScreen implements Screen, InputProcessor {
     public void render(float delta) {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        stage.getBatch().begin();
-        backGround.draw(stage.getBatch());
-    //    neutralFace.draw(stage.getBatch());
-   //     sadFace.draw(stage.getBatch());
-        happyFace.draw(stage.getBatch());
-        stage.getBatch().end();
-
         stage.act(Gdx.graphics.getDeltaTime());
         stage.draw();
+    }
+
+    @Override
+    public void dispose() {
+        stage.dispose();
+    }
+
+    @Override
+    public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+        //System.out.println(Gdx.input.getX() + " " + (stage.getHeight() - Gdx.input.getY()));
+        storeTouch = new Vector2(Gdx.input.getX(), (stage.getHeight() - Gdx.input.getY()));
+        return true;
+    }
+
+    @Override
+    public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+        if(storeTouch.x >= contButton.getX() && storeTouch.x <= contButton.getX() + cellWidth
+                && storeTouch.y >= contButton.getY() && storeTouch.y <= contButton.getY() + cellHeight) {
+            System.out.println("neutralface.jpg touched");
+        }
+        else if(storeTouch.x >= quitButton.getX() && storeTouch.x <= quitButton.getX() + cellWidth
+                && storeTouch.y >= quitButton.getY() && storeTouch.y <= quitButton.getY() + cellHeight) {
+            System.out.println("sadface.jpg touched");
+            Gdx.app.exit();
+        }
+        else if(storeTouch.x >= newGameButton.getX() && storeTouch.x <= newGameButton.getX() + cellWidth
+                && storeTouch.y >= newGameButton.getY() && storeTouch.y <= newGameButton.getY() + cellHeight) {
+            System.out.println("happyface.jpg touched");
+            dispose();
+            game.setScreen(new GameplayScreen(game));
+        }
+        return true;
     }
 
     @Override
@@ -106,41 +115,8 @@ public class MainMenuScreen implements Screen, InputProcessor {
     }
 
     @Override
-    public void dispose() {
-
-        stage.dispose();
-    }
-
-    @Override
     public void resize(int width, int height) {
 
-    }
-
-    @Override
-    public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-        System.out.println(Gdx.input.getX() + " " + (stage.getHeight() - Gdx.input.getY()));
-        storeTouch = new Vector2(Gdx.input.getX(), (stage.getHeight() - Gdx.input.getY()));
-        return true;
-    }
-
-    @Override
-    public boolean touchUp(int screenX, int screenY, int pointer, int button) {
-        if(storeTouch.x >= newGameButton.getX() && storeTouch.x <= newGameButton.getX() + cellWidth
-                && storeTouch.y >= newGameButton.getY() && storeTouch.y <= newGameButton.getY() + cellHeight) {
-            System.out.println("neutralface.jpg touched");
-        }
-        else if(storeTouch.x >= quitButton.getX() && storeTouch.x <= quitButton.getX() + cellWidth
-                && storeTouch.y >= quitButton.getY() && storeTouch.y <= quitButton.getY() + cellHeight) {
-            System.out.println("sadface.jpg touched");
-            Gdx.app.exit();
-        }
-        else if(storeTouch.x >= happyFace.getX() && storeTouch.x <= happyFace.getX() + cellWidth
-                && storeTouch.y >= happyFace.getY() && storeTouch.y <= happyFace.getY() + cellHeight) {
-            System.out.println("happyface.jpg touched");
-            dispose();
-            game.setScreen(new GameplayScreen(game));
-        }
-        return true;
     }
 
     @Override

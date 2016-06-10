@@ -9,31 +9,31 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 /**
  * Created by admin on 6/9/2016.
  */
-public class MainMenuNewGame extends Actor {
+public class MainMenuCont extends Actor {
     private float width;
     private float height;
-    private Sprite newGameButton;
+    private Sprite contButton;
 
-    public MainMenuNewGame(float cellWidth, float cellHeight) {
+    public MainMenuCont(float cellWidth, float cellHeight) {
         width = cellWidth;
         height = cellHeight;
-        newGameButton = new Sprite(new Texture(Gdx.files.internal("happyface.jpg")));
-        newGameButton.setPosition(cellWidth * 3, cellHeight);
-        newGameButton.setSize(cellWidth, cellHeight);
+        contButton = new Sprite(new Texture(Gdx.files.internal("neutralface.jpg")));
+        contButton.setPosition(width * 1, height);
+        contButton.setSize(width, height);
     }
 
     @Override
     public void draw(Batch batch, float parentAlpha) {
-        newGameButton.draw(batch);
+        contButton.draw(batch);
     }
 
     @Override
     public float getX() {
-        return newGameButton.getX();
+        return contButton.getX();
     }
 
     @Override
     public float getY() {
-        return newGameButton.getY();
+        return contButton.getY();
     }
 }
