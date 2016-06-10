@@ -15,7 +15,7 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
  * Created by admin on 6/8/2016.
  */
 public class GameplayScreen implements Screen, InputProcessor {
-    final Game game;
+    final GameScreen game;
     OrthographicCamera camera;
     private Sprite backGround;
     Stage stage;
@@ -33,7 +33,7 @@ public class GameplayScreen implements Screen, InputProcessor {
 
         this.game = gam;
         camera = new OrthographicCamera();
-        stage = new Stage(new ScreenViewport(camera));      //FIX PROBLEM WITH 2 SPRITEBATCHES
+        stage = new Stage(new ScreenViewport(camera), game.batch);
 
         backGround = new Sprite(new Texture(Gdx.files.internal("ugly face sean 2.png")));
         backGround.setPosition(0, 0);
