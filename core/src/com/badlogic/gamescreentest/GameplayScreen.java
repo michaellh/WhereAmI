@@ -2,6 +2,7 @@ package com.badlogic.gamescreentest;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
@@ -38,6 +39,9 @@ public class GameplayScreen implements Screen, InputProcessor {
         backGround = new Sprite(new Texture(Gdx.files.internal("ugly face sean 2.png")));
         backGround.setPosition(0, 0);
         backGround.setSize(cellWidth * 5, cellHeight * 3);
+
+        InputMultiplexer im = new InputMultiplexer(stage, this);
+        Gdx.input.setInputProcessor(im);
     }
 
     @Override

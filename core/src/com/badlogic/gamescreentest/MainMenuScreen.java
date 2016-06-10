@@ -31,6 +31,7 @@ public class MainMenuScreen implements Screen, InputProcessor {
     private Sprite neutralFace;
     private Sprite happyFace;
 
+    private MainMenuNewGame newGameButton;
     private MainMenuQuit quitButton;
 
     public MainMenuScreen(final GameScreen gam) {
@@ -47,16 +48,18 @@ public class MainMenuScreen implements Screen, InputProcessor {
         backGround.setPosition(0, 0);
         backGround.setSize(cellWidth * 5, cellHeight * 3);
         //stage.addActor(backGround);
-
+/*
         neutralFace = new Sprite(new Texture(Gdx.files.internal("neutralface.jpg")));
         neutralFace.setPosition(cellWidth * 1, cellHeight);
         neutralFace.setSize(cellWidth, cellHeight);
-/*
+
         sadFace = new Sprite(new Texture(Gdx.files.internal("sadface.jpg")));
         sadFace.setPosition(cellWidth * 2, cellHeight);
         sadFace.setSize(cellWidth, cellHeight);
 */
+        newGameButton = new MainMenuNewGame(cellWidth, cellHeight);
         quitButton = new MainMenuQuit(cellWidth, cellHeight);
+        stage.addActor(newGameButton);
         stage.addActor(quitButton);
 
         happyFace = new Sprite(new Texture(Gdx.files.internal("happyface.jpg")));
@@ -73,7 +76,7 @@ public class MainMenuScreen implements Screen, InputProcessor {
 
         stage.getBatch().begin();
         backGround.draw(stage.getBatch());
-        neutralFace.draw(stage.getBatch());
+    //    neutralFace.draw(stage.getBatch());
    //     sadFace.draw(stage.getBatch());
         happyFace.draw(stage.getBatch());
         stage.getBatch().end();
@@ -104,6 +107,7 @@ public class MainMenuScreen implements Screen, InputProcessor {
 
     @Override
     public void dispose() {
+
         stage.dispose();
     }
 
@@ -115,15 +119,14 @@ public class MainMenuScreen implements Screen, InputProcessor {
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
         System.out.println(Gdx.input.getX() + " " + (stage.getHeight() - Gdx.input.getY()));
-        System.out.println(quitButton.getWidth() + " " + quitButton.getHeight());
         storeTouch = new Vector2(Gdx.input.getX(), (stage.getHeight() - Gdx.input.getY()));
         return true;
     }
 
     @Override
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
-        if(storeTouch.x >= neutralFace.getX() && storeTouch.x <= neutralFace.getX() + cellWidth
-                && storeTouch.y >= neutralFace.getY() && storeTouch.y <= neutralFace.getY() + cellHeight) {
+        if(storeTouch.x >= newGameButton.getX() && storeTouch.x <= newGameButton.getX() + cellWidth
+                && storeTouch.y >= newGameButton.getY() && storeTouch.y <= newGameButton.getY() + cellHeight) {
             System.out.println("neutralface.jpg touched");
         }
         else if(storeTouch.x >= quitButton.getX() && storeTouch.x <= quitButton.getX() + cellWidth
@@ -134,8 +137,8 @@ public class MainMenuScreen implements Screen, InputProcessor {
         else if(storeTouch.x >= happyFace.getX() && storeTouch.x <= happyFace.getX() + cellWidth
                 && storeTouch.y >= happyFace.getY() && storeTouch.y <= happyFace.getY() + cellHeight) {
             System.out.println("happyface.jpg touched");
-            game.setScreen(new GameplayScreen(game));
             dispose();
+            game.setScreen(new GameplayScreen(game));
         }
         return true;
     }
