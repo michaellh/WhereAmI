@@ -26,10 +26,7 @@ public class MainMenuScreen implements Screen, InputProcessor {
     private MainMenuNewGame newGameButton;
 
     Vector2 storeTouch;
-    float cellWidth;
-    float cellHeight;
-    float screenWidth;
-    float screenHeight;
+    float cellWidth, cellHeight, screenWidth, screenHeight;
 
     public MainMenuScreen(final GameScreen gam) {
         screenWidth = Gdx.graphics.getWidth();
