@@ -59,11 +59,4 @@ public class Room {
         return (x1 <= room.x2 && x2 >= room.x1 &&
                 y1 <= room.y2 && room.y2 >= room.y1);
     }
-
-    /*
-    private void placeRooms() {
-        rooms = new Array();
-
-
-    }*/
 }

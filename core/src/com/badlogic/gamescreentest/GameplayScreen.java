@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.FillViewport;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import java.util.Random;
@@ -19,65 +20,88 @@ import java.util.Random;
 public class GameplayScreen implements Screen, InputProcessor {
     final GameScreen game;
     OrthographicCamera camera;
-    private Sprite backGround;
-    Sprite room1;
-    Sprite room2;
-    Sprite room3;
-    Sprite room4;
     Stage stage;
     Room room;
 
     Random rand;
-    int roomNum;
+    int wallCount;
+    Array<Room> rooms;
+    int[][] mapTiles;
     float cellWidth;
     float cellHeight;
     float screenWidth;
     float screenHeight;
-    float tileWidth;
     int tiledMapWidth;
     int tiledMapHeight;
+    int thisPosX;
+    int thisPosY;
+    int MIN_X;
+    int MIN_Y;
+    int MAX_X;
+    int MAX_Y;
+    int startPosX;
+    int startPosY;
+    int endPosX;
+    int endPosY;
 
     public GameplayScreen(final GameScreen gam) {
         screenWidth = Gdx.graphics.getWidth();
         screenHeight = Gdx.graphics.getHeight();
         cellWidth = screenWidth / 5;
         cellHeight = screenHeight / 4;
-        tiledMapWidth = 120;
-        tiledMapHeight = 120;
-        //tileWidth = screenWidth / 32;
+        tiledMapWidth = 13;
+        tiledMapHeight = 15;
         rand = new Random();
-/*
-        roomNum = randInt(4, 10);
-        for(int i = 1; i <= roomNum; i++) {
-            room = new Room(randInt(0, tiledMapWidth), randInt(0, tiledMapHeight),
-                    tiledMapWidth, tiledMapHeight, "badlogic.jpg");
-            roomGen = room.createRoom();
-        }
-*/
-        room = new Room(randInt(0, tiledMapWidth), randInt(0, tiledMapHeight),
-                randInt(5, 10), randInt(5, 10), "badlogic.jpg");
-        room1 = room.createRoom();
-
-        room = new Room(randInt(0, tiledMapWidth), randInt(0, tiledMapHeight),
-                randInt(5, 10), randInt(5, 10), "badlogic.jpg");
-        room2 = room.createRoom();
-
-        room = new Room(randInt(0, tiledMapWidth), randInt(0, tiledMapHeight),
-                randInt(5, 10), randInt(5, 10), "badlogic.jpg");
-        room3 = room.createRoom();
-
-        room = new Room(randInt(0, tiledMapWidth), randInt(0, tiledMapHeight),
-                randInt(5, 10), randInt(5, 10), "badlogic.jpg");
-        room4 = room.createRoom();
 
         this.game = gam;
         camera = new OrthographicCamera();
-        stage = new Stage(new FillViewport(tiledMapWidth, tiledMapHeight, camera));
-/*
-        backGround = new Sprite(new Texture(Gdx.files.internal("ugly face sean 2.png")));
-        backGround.setPosition(0, 0);
-        backGround.setSize(cellWidth * 5, cellHeight * 3);
-        */
+        stage = new Stage(new ScreenViewport(camera), game.batch);
+
+        mapTiles = new int[tiledMapWidth][tiledMapHeight];
+        for(int i = 0; i < tiledMapWidth; i++) {
+            for(int j = 0; j < tiledMapHeight; j++) {
+                if(randInt(1, 100) <= 45) {
+                    mapTiles[i][j] = 1;
+                }
+            }
+        }
+
+        for(int i = 0; i < tiledMapWidth; i++) {
+            for(int j = 0; j < tiledMapHeight; j++) {
+                System.out.print(mapTiles[i][j] + " ");
+            }
+            System.out.println("");
+        }
+        System.out.println("");
+
+        for(int i = 0; i < tiledMapWidth; i++) {
+            for(int j = 0; j < tiledMapHeight; j++) {
+                startPosX = (i - 1 < 0) ? i : i - 1;
+                startPosY = (j - 1 < 0) ? j : j-1;
+                endPosX =   (i + 1 > 12) ? i : i+1;
+                endPosY =   (j + 1 > 14) ? j : j+1;
+
+                // See how many are alive
+                for (int rowNum=startPosX; rowNum<=endPosX; rowNum++) {
+                    for (int colNum=startPosY; colNum<=endPosY; colNum++) {
+                        if(mapTiles[rowNum][colNum] == 1) {
+                            wallCount++;
+                        }
+                    }
+                }
+                if(wallCount < 5) {
+                    mapTiles[i][j] = 0;
+                }
+                wallCount = 0;
+            }
+        }
+
+        for(int i = 0; i < tiledMapWidth; i++) {
+            for(int j = 0; j < tiledMapHeight; j++) {
+                System.out.print(mapTiles[i][j] + " ");
+            }
+            System.out.println("");
+        }
 
         //InputMultiplexer im = new InputMultiplexer(stage, this);
         Gdx.input.setInputProcessor(stage);
@@ -86,22 +110,6 @@ public class GameplayScreen implements Screen, InputProcessor {
     @Override
     public void render(float delta) {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-/*
-        stage.getBatch().begin();
-        backGround.draw(stage.getBatch());
-        stage.getBatch().end();
-*/
-        /*
-        stage.getBatch().begin();
-        roomGen.draw(stage.getBatch());
-        stage.getBatch().end();
-*/
-        stage.getBatch().begin();
-        room1.draw(stage.getBatch());
-        room2.draw(stage.getBatch());
-        room3.draw(stage.getBatch());
-        room4.draw(stage.getBatch());
-        stage.getBatch().end();
 
         stage.act(Gdx.graphics.getDeltaTime());
         stage.draw();
@@ -110,10 +118,6 @@ public class GameplayScreen implements Screen, InputProcessor {
     public int randInt(int min, int max) {
         int randNum = rand.nextInt((max - min) + 1) + min;
         return randNum;
-    }
-
-    public float getTileWidth() {
-        return tileWidth;
     }
 
     @Override
