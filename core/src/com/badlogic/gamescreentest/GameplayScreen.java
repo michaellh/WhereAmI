@@ -8,7 +8,6 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import java.util.Random;
 
@@ -20,8 +19,8 @@ public class GameplayScreen implements Screen, InputProcessor {
     OrthographicCamera camera;
     Stage stage;
     Sprite backGround;
-
     Random rand;
+
     int wallCount;
     int[][] ogMap;
     int[][] newMap;
