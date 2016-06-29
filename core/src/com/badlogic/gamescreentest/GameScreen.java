@@ -11,21 +11,13 @@ public class GameScreen extends Game {
 
 	@Override
 	public void create () {
-
 		assetManager = new AssetManager();
-		assetManager.load("happyface.jpg", Texture.class);
-		assetManager.load("sadface.jpg", Texture.class);
-		assetManager.load("neutralface.jpg", Texture.class);
-
 		batch = new SpriteBatch();
-		//this.setScreen(new MainMenuScreen(this));
+		this.setScreen(new MainMenuScreen(this));
 	}
 
 	@Override
 	public void render () {
-		if(assetManager.update()) {
-			this.setScreen(new MainMenuScreen(this));
-		}
 		super.render();
 	}
 

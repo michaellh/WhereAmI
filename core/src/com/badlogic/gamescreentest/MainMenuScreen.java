@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -18,16 +19,19 @@ public class MainMenuScreen implements Screen, InputProcessor {
     final GameScreen game;
     OrthographicCamera camera;
     Stage stage;
+    AssetManager assetManager;
 
     private MainMenuBackGround backGround;
     private MainMenuCont contButton;
     private MainMenuQuit quitButton;
     private MainMenuNewGame newGameButton;
 
+    boolean assetsLoaded;
     Vector2 storeTouch;
     float cellWidth, cellHeight, screenWidth, screenHeight;
 
     public MainMenuScreen(final GameScreen gam) {
+        assetsLoaded = false;
         screenWidth = Gdx.graphics.getWidth();
         screenHeight = Gdx.graphics.getHeight();
         cellWidth = screenWidth / 5;
@@ -36,6 +40,12 @@ public class MainMenuScreen implements Screen, InputProcessor {
         game = gam;
         camera = new OrthographicCamera();
         stage = new Stage(new ScreenViewport(camera), game.batch);
+
+        assetManager = game.assetManager;
+        assetManager.load("happyface.jpg", Texture.class);
+        assetManager.load("sadface.jpg", Texture.class);
+        assetManager.load("neutralface.jpg", Texture.class);
+        assetManager.load("badlogic.jpg", Texture.class);
 
         backGround = new MainMenuBackGround(cellWidth, cellHeight);
         contButton = new MainMenuCont(cellWidth, cellHeight);
@@ -53,7 +63,9 @@ public class MainMenuScreen implements Screen, InputProcessor {
     @Override
     public void render(float delta) {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-
+        if(assetManager.update()) {
+            assetsLoaded = true;
+        }
         stage.act(Gdx.graphics.getDeltaTime());
         stage.draw();
     }
@@ -67,7 +79,7 @@ public class MainMenuScreen implements Screen, InputProcessor {
 
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-        System.out.println(Gdx.input.getX() + " " + (stage.getHeight() - Gdx.input.getY()));
+        //System.out.println(Gdx.input.getX() + " " + (stage.getHeight() - Gdx.input.getY()));
         storeTouch = new Vector2(Gdx.input.getX(), (stage.getHeight() - Gdx.input.getY()));
         return true;
     }
@@ -78,7 +90,7 @@ public class MainMenuScreen implements Screen, InputProcessor {
         if(storeTouch.x >= contButton.getX() && storeTouch.x <= contButton.getX() + cellWidth
                 && storeTouch.y >= contButton.getY() && storeTouch.y <= contButton.getY() + cellHeight) {
             System.out.println("neutralface.jpg touched");
-        }/*
+        }
         else if(storeTouch.x >= quitButton.getX() && storeTouch.x <= quitButton.getX() + cellWidth
                 && storeTouch.y >= quitButton.getY() && storeTouch.y <= quitButton.getY() + cellHeight) {
             System.out.println("sadface.jpg touched");
@@ -89,8 +101,10 @@ public class MainMenuScreen implements Screen, InputProcessor {
                 && storeTouch.y >= newGameButton.getY() && storeTouch.y <= newGameButton.getY() + cellHeight) {
             System.out.println("happyface.jpg touched");
             dispose();
-            game.setScreen(new GameplayScreen(game));
-        }*/
+            if(assetsLoaded == true) {
+                game.setScreen(new GameplayScreen(game));
+            }
+        }
         return true;
     }
 

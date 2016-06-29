@@ -1,6 +1,7 @@
 package com.badlogic.gamescreentest;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.assets.AssetManager;
@@ -19,18 +20,23 @@ public class GameplayScreen implements Screen, InputProcessor {
     final GameScreen game;
     OrthographicCamera camera;
     Stage stage;
-    Sprite backGround;
+    Texture happyFace;
+    Texture badLogic;
     Random rand;
+    AssetManager assetManager;
 
     int wallCount;
     int[][] ogMap;
     int[][] newMap;
+
     float cellWidth;
     float cellHeight;
     float screenWidth;
     float screenHeight;
     int tiledMapWidth;
     int tiledMapHeight;
+    int textureSize;
+
     int startPosX;
     int startPosY;
     int endPosX;
@@ -43,11 +49,16 @@ public class GameplayScreen implements Screen, InputProcessor {
         cellHeight = screenHeight / 4;
         tiledMapWidth = 30;
         tiledMapHeight = 30;
+        textureSize = 32;
         rand = new Random();
 
         this.game = gam;
         camera = new OrthographicCamera();
         stage = new Stage(new ScreenViewport(camera), game.batch);
+
+        assetManager = game.assetManager;
+        happyFace = assetManager.get("happyface.jpg", Texture.class);
+        badLogic = assetManager.get("badlogic.jpg", Texture.class);
 
         ogMap = new int[tiledMapWidth][tiledMapHeight];
         for(int i = 0; i < tiledMapWidth; i++) {
@@ -67,9 +78,16 @@ public class GameplayScreen implements Screen, InputProcessor {
         newMap = mapIter(newMap);
         //displayWorld(newMap);
         newMap = mapIter(newMap);
+        /* Adds borders to the dungeon
+        for(int i = 0; i < tiledMapWidth; i++) {
+            newMap[i][0] = 1;
+            newMap[i][tiledMapHeight - 1] = 1;
+            newMap[0][i] = 1;
+            newMap[tiledMapWidth - 1][i] = 1;
+        }*/
 
-        //InputMultiplexer im = new InputMultiplexer(stage, this);
-        Gdx.input.setInputProcessor(stage);
+        InputMultiplexer im = new InputMultiplexer(stage, this);
+        Gdx.input.setInputProcessor(im);
     }
 
     public int[][] mapIter(int[][] oldMap) {
@@ -121,18 +139,20 @@ public class GameplayScreen implements Screen, InputProcessor {
     public void render(float delta) {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        stage.getBatch().begin();
+        game.batch.begin();
         for(int i = 0; i < tiledMapWidth; i++) {
             for (int j = 0; j < tiledMapHeight; j++) {
-                if(newMap[i][j] == 1) {
-                    backGround = new Sprite(new Texture(Gdx.files.internal("happyface.jpg")));
-                    backGround.setPosition(i * 32, j * 32);
-                    backGround.setSize(32, 32);
-                    backGround.draw(stage.getBatch());
+                if (newMap[i][j] == 1) {
+                    game.batch.draw(happyFace, i * textureSize, j * textureSize,
+                            textureSize, textureSize);
+                }
+                else {
+                    game.batch.draw(badLogic, i * textureSize, j * textureSize,
+                            textureSize, textureSize);
                 }
             }
         }
-        stage.getBatch().end();
+        game.batch.end();
 
         stage.act(Gdx.graphics.getDeltaTime());
         stage.draw();
@@ -165,6 +185,7 @@ public class GameplayScreen implements Screen, InputProcessor {
 
     @Override
     public void dispose() {
+        assetManager.dispose();
         stage.dispose();
     }
 
