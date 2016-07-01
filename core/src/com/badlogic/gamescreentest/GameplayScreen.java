@@ -20,10 +20,12 @@ public class GameplayScreen implements Screen, InputProcessor {
     final GameScreen game;
     OrthographicCamera camera;
     Stage stage;
+    AssetManager assetManager;
     Texture happyFace;
+    Texture neutralFace;
+    Texture sadFace;
     Texture badLogic;
     Random rand;
-    AssetManager assetManager;
 
     int wallCount;
     int[][] ogMap;
@@ -37,6 +39,8 @@ public class GameplayScreen implements Screen, InputProcessor {
     int tiledMapHeight;
     int textureSize;
 
+    int ranPosX;
+    int ranPosY;
     int startPosX;
     int startPosY;
     int endPosX;
@@ -47,10 +51,10 @@ public class GameplayScreen implements Screen, InputProcessor {
         screenHeight = Gdx.graphics.getHeight();
         cellWidth = screenWidth / 5;
         cellHeight = screenHeight / 4;
-        tiledMapWidth = 30;
-        tiledMapHeight = 30;
         textureSize = 32;
         rand = new Random();
+        tiledMapWidth = randInt(25, 40);
+        tiledMapHeight = randInt(25, 40);
 
         this.game = gam;
         camera = new OrthographicCamera();
@@ -58,8 +62,17 @@ public class GameplayScreen implements Screen, InputProcessor {
 
         assetManager = game.assetManager;
         happyFace = assetManager.get("happyface.jpg", Texture.class);
+        neutralFace = assetManager.get("neutralface.jpg", Texture.class);
+        sadFace = assetManager.get("sadface.jpg", Texture.class);
         badLogic = assetManager.get("badlogic.jpg", Texture.class);
 
+        newMap = createWorld();
+
+        InputMultiplexer im = new InputMultiplexer(stage, this);
+        Gdx.input.setInputProcessor(im);
+    }
+
+    public int[][] createWorld() {
         ogMap = new int[tiledMapWidth][tiledMapHeight];
         for(int i = 0; i < tiledMapWidth; i++) {
             for(int j = 0; j < tiledMapHeight; j++) {
@@ -68,29 +81,48 @@ public class GameplayScreen implements Screen, InputProcessor {
                 }
             }
         }
-        //displayWorld(ogMap);
-        newMap = mapIter(ogMap);
-        //displayWorld(newMap);
-        newMap = mapIter(newMap);
-        //displayWorld(newMap);
-        newMap = mapIter(newMap);
-        //displayWorld(newMap);
-        newMap = mapIter(newMap);
-        //displayWorld(newMap);
-        newMap = mapIter(newMap);
-        /* Adds borders to the dungeon
-        for(int i = 0; i < tiledMapWidth; i++) {
-            newMap[i][0] = 1;
-            newMap[i][tiledMapHeight - 1] = 1;
-            newMap[0][i] = 1;
-            newMap[tiledMapWidth - 1][i] = 1;
-        }*/
 
-        InputMultiplexer im = new InputMultiplexer(stage, this);
-        Gdx.input.setInputProcessor(im);
+        while(ogMap[ranPosX][ranPosY] != 0) {
+            ranPosX = randInt(1, tiledMapWidth--);
+            ranPosY = randInt(1, tiledMapHeight--);
+        }
+        newMap = floodFill(ogMap, ranPosX, ranPosY, 0, 1);
+
+        newMap = mapIter1(ogMap);
+        newMap = mapIter2(newMap);
+        newMap = mapIter2(newMap);
+        newMap = mapIter2(newMap);
+        newMap = mapIter2(newMap);
+        newMap = mapIter2(newMap);
+        newMap = mapIter1(newMap);
+        newMap = mapIter1(newMap);
+        newMap = mapIter1(newMap);
+        mapBorders();
+        return newMap;
     }
 
-    public int[][] mapIter(int[][] oldMap) {
+    public int[][] floodFill(int[][] node, int x, int y, int target, int replace) {
+        if(x <= 0 || x >= tiledMapWidth) {
+            return node;
+        }
+        if(y <= 0 || y >= tiledMapHeight) {
+            return node;
+        }
+        if(target == replace) {
+            return node;
+        }
+        if(node[x][y] != target) {
+            return node;
+        }
+        node[x][y] = replace;
+        floodFill(node, x, y--, target, replace);
+        floodFill(node, x, y++, target, replace);
+        floodFill(node, x--, y, target, replace);
+        floodFill(node, x++, y, target, replace);
+        return node;
+    }
+
+    public int[][] mapIter1(int[][] oldMap) {
         wallCount = 0;
         int[][] newMap = new int[tiledMapWidth][tiledMapHeight];
 
@@ -111,7 +143,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                 if(oldMap[i][j] == 1 && wallCount >= 4) {
                     newMap[i][j] = 1;
                 }
-                else if(oldMap[i][j] == 0 && wallCount >= 5) {
+                else if(wallCount >= 5) {
                     newMap[i][j] = 1;
                 }
                 wallCount = 0;
@@ -120,19 +152,41 @@ public class GameplayScreen implements Screen, InputProcessor {
         return newMap;
     }
 
-    public void displayWorld(int[][] map) {
-        for(int i = 0; i < tiledMapHeight; i++) {
-            for(int j = 0; j < tiledMapWidth; j++) {
-                if(map[j][i] == 1) {
-                    System.out.print("*" + " ");
+    public int[][] mapIter2(int[][] oldMap) {
+        int[][] newMap = oldMap;
+
+        for(int i = 0; i < tiledMapWidth; i++) {
+            for(int j = 0; j < tiledMapHeight; j++) {
+                startPosX = (i - 2 < 0) ? i : i - 2;
+                startPosY = (j - 2 < 0) ? j : j - 2;
+                endPosX =   (i + 2 > (tiledMapWidth - 1)) ? i : i + 2;
+                endPosY =   (j + 2 > (tiledMapHeight - 1)) ? j : j + 2;
+
+                for (int rowNum = startPosX; rowNum <= endPosX; rowNum++) {
+                    for (int colNum = startPosY; colNum <= endPosY; colNum++) {
+                        if(oldMap[rowNum][colNum] == 1) {
+                            wallCount++;
+                        }
+                    }
                 }
-                else {
-                    System.out.print("  ");
+                if(wallCount <= 2){
+                    newMap[i][j] = 1;
                 }
+                wallCount = 0;
             }
-            System.out.println("");
         }
-        System.out.println("_________________________________________________________________"+ "\n");
+        return newMap;
+    }
+
+    public void mapBorders() {
+        for(int i = 0; i < tiledMapWidth; i++) {
+            newMap[i][0] = 1;
+            newMap[i][tiledMapHeight - 1] = 1;
+        }
+        for(int j = 0; j < tiledMapHeight; j++) {
+            newMap[0][j] = 1;
+            newMap[tiledMapWidth - 1][j] = 1;
+        }
     }
 
     @Override
