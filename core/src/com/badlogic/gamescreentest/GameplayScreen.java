@@ -57,7 +57,7 @@ public class GameplayScreen implements Screen, InputProcessor {
         tiledMapHeight = randInt(25, 40);
 
         this.game = gam;
-        camera = new OrthographicCamera(10 * textureSize, 5 * textureSize);
+        camera = new OrthographicCamera(15 * textureSize, 10 * textureSize);
         camera.setToOrtho(false, camera.viewportWidth, camera.viewportHeight);
         camera.update();
 
@@ -71,7 +71,7 @@ public class GameplayScreen implements Screen, InputProcessor {
         newMap = createWorld();
 
         //InputMultiplexer im = new InputMultiplexer(stage, this);
-        //Gdx.input.setInputProcessor(im);
+        Gdx.input.setInputProcessor(this);
     }
 
     public int[][] createWorld() {
