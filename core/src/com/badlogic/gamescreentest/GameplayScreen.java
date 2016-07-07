@@ -64,7 +64,8 @@ public class GameplayScreen implements Screen, InputProcessor {
 
         //set up the Game, SpriteBatch, and OrthographicCamera
         this.game = gam;
-        camera = new OrthographicCamera(15 * textureSize, 10 * textureSize);
+        //camera = new OrthographicCamera(15 * textureSize, 10 * textureSize);
+        camera = new OrthographicCamera(screenWidth, screenHeight);
 
         //get, after loading, the assets
         assetManager = game.assetManager;
@@ -83,11 +84,12 @@ public class GameplayScreen implements Screen, InputProcessor {
             ranPosY = randInt(1, (tiledMapHeight - 1));
         }
         playerChar = new Vector2(ranPosX, ranPosY);
-        camera.position.set(ranPosX * textureSize, ranPosY * textureSize, 0);
+        //camera.position.set(ranPosX * textureSize, ranPosY * textureSize, 0);
+        camera.position.set(camera.viewportWidth/2f, camera.viewportHeight/2f, 0);
         camera.update();
 
         //InputMultiplexer im = new InputMultiplexer(stage, this);
-        Gdx.input.setInputProcessor(this);
+        //Gdx.input.setInputProcessor(this);
     }
 
     public int[][] createWorld() {
@@ -106,7 +108,7 @@ public class GameplayScreen implements Screen, InputProcessor {
             ranPosX = randInt(1, (tiledMapWidth - 1));
             ranPosY = randInt(1, (tiledMapHeight - 1));
         }
-        newMap = floodFill(ogMap, ranPosX, ranPosY, 0, 1);
+        //newMap = floodFill(ogMap, ranPosX, ranPosY, 0, 1);
 
         newMap = mapIter1(ogMap);
         newMap = mapIter2(newMap);
@@ -135,10 +137,14 @@ public class GameplayScreen implements Screen, InputProcessor {
             return node;
         }
         node[x][y] = replace;
-        floodFill(node, x, y--, target, replace);
-        floodFill(node, x, y++, target, replace);
-        floodFill(node, x--, y, target, replace);
-        floodFill(node, x++, y, target, replace);
+        floodFill(node, x--, y++, target, replace); //top left
+        floodFill(node, x, y--, target, replace);   //bot
+        floodFill(node, x, y++, target, replace);   //top
+        floodFill(node, x++, y++, target, replace); //top right
+        floodFill(node, x--, y--, target, replace); //bot left
+        floodFill(node, x++, y--, target, replace); //bot right
+        floodFill(node, x--, y, target, replace);   //left
+        floodFill(node, x++, y, target, replace);   //right
         return node;
     }
 
@@ -274,8 +280,6 @@ public class GameplayScreen implements Screen, InputProcessor {
 
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-        //get the position of which tile was pressed, if within the tiled map, and move the
-        //player character texture to that location as well as the camera following along the way
         userTouch = new Vector2(Gdx.input.getX(), Gdx.input.getY());
         worldTouch = camera.unproject(new Vector3(userTouch, 0));
         return true;
@@ -287,7 +291,11 @@ public class GameplayScreen implements Screen, InputProcessor {
                 (int) worldTouch.y / textureSize, 0);
         if((worldTouch.x > 0 && worldTouch.x < tiledMapWidth) &&
                 (worldTouch.y > 0 && worldTouch.y < tiledMapHeight)) {
-            if(newMap[(int) worldTouch.x][(int) worldTouch.y] == 0) {
+            if((newMap[(int) worldTouch.x][(int) worldTouch.y] == 0) &&
+                    ((Math.abs(worldTouch.x - playerChar.x) == 1 ||
+                    Math.abs(worldTouch.x - playerChar.x) == 0) &&
+                            (Math.abs(worldTouch.y - playerChar.y) == 1 ||
+                                    (Math.abs(worldTouch.y - playerChar.y) == 0)))) {
                 playerChar.x = worldTouch.x;
                 playerChar.y = worldTouch.y;
                 camera.position.set(playerChar.x * textureSize, playerChar.y * textureSize, 0);
