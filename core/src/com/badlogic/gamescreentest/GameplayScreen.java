@@ -8,7 +8,8 @@ import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import java.util.Random;
@@ -19,15 +20,15 @@ import java.util.Random;
 public class GameplayScreen implements Screen, InputProcessor {
     final GameScreen game;
     OrthographicCamera camera;
-    Stage stage;
+    //Stage stage;
     AssetManager assetManager;
+    Random rand;
     Texture happyFace;
     Texture neutralFace;
     Texture sadFace;
     Texture badLogic;
-    Random rand;
+    Texture uglySean;
 
-    int wallCount;
     int[][] ogMap;
     int[][] newMap;
 
@@ -38,6 +39,7 @@ public class GameplayScreen implements Screen, InputProcessor {
     int tiledMapWidth;
     int tiledMapHeight;
     int textureSize;
+    int wallCount;
 
     int ranPosX;
     int ranPosY;
@@ -45,6 +47,10 @@ public class GameplayScreen implements Screen, InputProcessor {
     int startPosY;
     int endPosX;
     int endPosY;
+
+    Vector2 playerChar;
+    Vector2 userTouch;
+    Vector3 worldTouch;
 
     public GameplayScreen(final GameScreen gam) {
         screenWidth = Gdx.graphics.getWidth();
@@ -56,20 +62,34 @@ public class GameplayScreen implements Screen, InputProcessor {
         tiledMapWidth = randInt(25, 40);
         tiledMapHeight = randInt(25, 40);
 
+        //set up the Game, SpriteBatch, and OrthographicCamera
         this.game = gam;
-        camera = new OrthographicCamera();
-        stage = new Stage(new ScreenViewport(camera), game.batch);
+        //camera = new OrthographicCamera(15 * textureSize, 10 * textureSize);
+        camera = new OrthographicCamera(screenWidth, screenHeight);
 
+        //get, after loading, the assets
         assetManager = game.assetManager;
+        uglySean = assetManager.get("ugly face sean.jpg", Texture.class);
         happyFace = assetManager.get("happyface.jpg", Texture.class);
         neutralFace = assetManager.get("neutralface.jpg", Texture.class);
         sadFace = assetManager.get("sadface.jpg", Texture.class);
         badLogic = assetManager.get("badlogic.jpg", Texture.class);
 
+        //create the game world
         newMap = createWorld();
 
-        InputMultiplexer im = new InputMultiplexer(stage, this);
-        Gdx.input.setInputProcessor(im);
+        //initialize player character position
+        while(newMap[ranPosX][ranPosY] != 0) {
+            ranPosX = randInt(1, (tiledMapWidth - 1));
+            ranPosY = randInt(1, (tiledMapHeight - 1));
+        }
+        playerChar = new Vector2(ranPosX, ranPosY);
+        //camera.position.set(ranPosX * textureSize, ranPosY * textureSize, 0);
+        camera.position.set(camera.viewportWidth/2f, camera.viewportHeight/2f, 0);
+        camera.update();
+
+        //InputMultiplexer im = new InputMultiplexer(stage, this);
+        //Gdx.input.setInputProcessor(this);
     }
 
     public int[][] createWorld() {
@@ -82,11 +102,13 @@ public class GameplayScreen implements Screen, InputProcessor {
             }
         }
 
+        ranPosX = randInt(1, (tiledMapWidth - 1));
+        ranPosY = randInt(1, (tiledMapHeight - 1));
         while(ogMap[ranPosX][ranPosY] != 0) {
-            ranPosX = randInt(1, tiledMapWidth--);
-            ranPosY = randInt(1, tiledMapHeight--);
+            ranPosX = randInt(1, (tiledMapWidth - 1));
+            ranPosY = randInt(1, (tiledMapHeight - 1));
         }
-        newMap = floodFill(ogMap, ranPosX, ranPosY, 0, 1);
+        //newMap = floodFill(ogMap, ranPosX, ranPosY, 0, 1);
 
         newMap = mapIter1(ogMap);
         newMap = mapIter2(newMap);
@@ -97,7 +119,7 @@ public class GameplayScreen implements Screen, InputProcessor {
         newMap = mapIter1(newMap);
         newMap = mapIter1(newMap);
         newMap = mapIter1(newMap);
-        mapBorders();
+        newMap = mapBorders(newMap);
         return newMap;
     }
 
@@ -115,10 +137,14 @@ public class GameplayScreen implements Screen, InputProcessor {
             return node;
         }
         node[x][y] = replace;
-        floodFill(node, x, y--, target, replace);
-        floodFill(node, x, y++, target, replace);
-        floodFill(node, x--, y, target, replace);
-        floodFill(node, x++, y, target, replace);
+        floodFill(node, x--, y++, target, replace); //top left
+        floodFill(node, x, y--, target, replace);   //bot
+        floodFill(node, x, y++, target, replace);   //top
+        floodFill(node, x++, y++, target, replace); //top right
+        floodFill(node, x--, y--, target, replace); //bot left
+        floodFill(node, x++, y--, target, replace); //bot right
+        floodFill(node, x--, y, target, replace);   //left
+        floodFill(node, x++, y, target, replace);   //right
         return node;
     }
 
@@ -178,19 +204,23 @@ public class GameplayScreen implements Screen, InputProcessor {
         return newMap;
     }
 
-    public void mapBorders() {
+    public int[][] mapBorders(int[][] map) {
         for(int i = 0; i < tiledMapWidth; i++) {
-            newMap[i][0] = 1;
-            newMap[i][tiledMapHeight - 1] = 1;
+            map[i][0] = 1;
+            map[i][tiledMapHeight - 1] = 1;
         }
         for(int j = 0; j < tiledMapHeight; j++) {
-            newMap[0][j] = 1;
-            newMap[tiledMapWidth - 1][j] = 1;
+            map[0][j] = 1;
+            map[tiledMapWidth - 1][j] = 1;
         }
+        return map;
     }
 
     @Override
     public void render(float delta) {
+        camera.update();
+        game.batch.setProjectionMatrix(camera.combined);
+
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         game.batch.begin();
@@ -206,10 +236,9 @@ public class GameplayScreen implements Screen, InputProcessor {
                 }
             }
         }
+        game.batch.draw(sadFace, playerChar.x * textureSize, playerChar.y * textureSize,
+                textureSize, textureSize);
         game.batch.end();
-
-        stage.act(Gdx.graphics.getDeltaTime());
-        stage.draw();
     }
 
     public int randInt(int min, int max) {
@@ -240,7 +269,8 @@ public class GameplayScreen implements Screen, InputProcessor {
     @Override
     public void dispose() {
         assetManager.dispose();
-        stage.dispose();
+        //stage.dispose();
+        this.dispose();
     }
 
     @Override
@@ -250,12 +280,29 @@ public class GameplayScreen implements Screen, InputProcessor {
 
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-        return false;
+        userTouch = new Vector2(Gdx.input.getX(), Gdx.input.getY());
+        worldTouch = camera.unproject(new Vector3(userTouch, 0));
+        return true;
     }
 
     @Override
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
-        return false;
+        worldTouch = new Vector3((int) worldTouch.x / textureSize,
+                (int) worldTouch.y / textureSize, 0);
+        if((worldTouch.x > 0 && worldTouch.x < tiledMapWidth) &&
+                (worldTouch.y > 0 && worldTouch.y < tiledMapHeight)) {
+            if((newMap[(int) worldTouch.x][(int) worldTouch.y] == 0) &&
+                    ((Math.abs(worldTouch.x - playerChar.x) == 1 ||
+                    Math.abs(worldTouch.x - playerChar.x) == 0) &&
+                            (Math.abs(worldTouch.y - playerChar.y) == 1 ||
+                                    (Math.abs(worldTouch.y - playerChar.y) == 0)))) {
+                playerChar.x = worldTouch.x;
+                playerChar.y = worldTouch.y;
+                camera.position.set(playerChar.x * textureSize, playerChar.y * textureSize, 0);
+            }
+        }
+        System.out.println(worldTouch.x + " " + worldTouch.y);
+        return true;
     }
 
     @Override

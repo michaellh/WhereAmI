@@ -46,6 +46,7 @@ public class MainMenuScreen implements Screen, InputProcessor {
         assetManager.load("sadface.jpg", Texture.class);
         assetManager.load("neutralface.jpg", Texture.class);
         assetManager.load("badlogic.jpg", Texture.class);
+        assetManager.load("ugly face sean.jpg", Texture.class);
 
         backGround = new MainMenuBackGround(cellWidth, cellHeight);
         contButton = new MainMenuCont(cellWidth, cellHeight);
