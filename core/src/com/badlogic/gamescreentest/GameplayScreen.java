@@ -11,6 +11,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import java.util.Random;
 
@@ -28,6 +29,10 @@ public class GameplayScreen implements Screen, InputProcessor {
     Texture sadFace;
     Texture badLogic;
     Texture uglySean;
+
+    PlayerCharacter playerChar;
+    standardEnemy standardEnemy;
+    Array<standardEnemy> enemies;
 
     int[][] ogMap;
     int[][] newMap;
@@ -47,8 +52,9 @@ public class GameplayScreen implements Screen, InputProcessor {
     int startPosY;
     int endPosX;
     int endPosY;
+    int damage;
 
-    Vector2 playerChar;
+    //Vector2 playerChar;
     Vector2 userTouch;
     Vector3 worldTouch;
 
@@ -62,10 +68,19 @@ public class GameplayScreen implements Screen, InputProcessor {
         tiledMapWidth = randInt(25, 40);
         tiledMapHeight = randInt(25, 40);
 
+        playerChar = new PlayerCharacter(randInt(10, 15), randInt(1, 2),
+                0, randInt(0, 10));
+        enemies = new Array<standardEnemy>(randInt(5, 10));
+        for(int i = randInt(5, 10); i > 0; i--) {
+            standardEnemy = new standardEnemy(randInt(10, 15), randInt(1, 2),
+                    0, randInt(0, 10));
+            enemies.add(standardEnemy);
+        }
+
         //set up the Game, SpriteBatch, and OrthographicCamera
         this.game = gam;
-        //camera = new OrthographicCamera(15 * textureSize, 10 * textureSize);
-        camera = new OrthographicCamera(screenWidth, screenHeight);
+        camera = new OrthographicCamera(15 * textureSize, 10 * textureSize);
+        //camera = new OrthographicCamera(screenWidth, screenHeight);
 
         //get, after loading, the assets
         assetManager = game.assetManager;
@@ -83,13 +98,24 @@ public class GameplayScreen implements Screen, InputProcessor {
             ranPosX = randInt(1, (tiledMapWidth - 1));
             ranPosY = randInt(1, (tiledMapHeight - 1));
         }
-        playerChar = new Vector2(ranPosX, ranPosY);
-        //camera.position.set(ranPosX * textureSize, ranPosY * textureSize, 0);
-        camera.position.set(camera.viewportWidth/2f, camera.viewportHeight/2f, 0);
+        playerChar.x = ranPosX;
+        playerChar.y = ranPosY;
+        newMap[playerChar.x][playerChar.y] = 2;
+        camera.position.set(playerChar.x * textureSize, playerChar.y * textureSize, 0);
+        //camera.position.set(camera.viewportWidth/2f, camera.viewportHeight/2f, 0);
         camera.update();
 
+        while(newMap[ranPosX][ranPosY] != 0) {
+            ranPosX = randInt(1, (tiledMapWidth - 1));
+            ranPosY = randInt(1, (tiledMapHeight - 1));
+        }
+        //enemies. = ranPosX;
+        standardEnemy.y = ranPosY;
+        newMap[ranPosX][ranPosY] = 3;
+        //System.out.println(standardEnemy.x + " " + standardEnemy.y);
+
         //InputMultiplexer im = new InputMultiplexer(stage, this);
-        //Gdx.input.setInputProcessor(this);
+        Gdx.input.setInputProcessor(this);
     }
 
     public int[][] createWorld() {
@@ -230,14 +256,22 @@ public class GameplayScreen implements Screen, InputProcessor {
                     game.batch.draw(happyFace, i * textureSize, j * textureSize,
                             textureSize, textureSize);
                 }
+                else if (newMap[i][j] == 2) {
+                    game.batch.draw(sadFace, playerChar.x * textureSize, playerChar.y * textureSize,
+                            textureSize, textureSize);
+                }
+                else if (newMap[i][j] == 3) {
+                    game.batch.draw(neutralFace, standardEnemy.x * textureSize, standardEnemy.y * textureSize,
+                            textureSize, textureSize);
+                }
                 else {
                     game.batch.draw(badLogic, i * textureSize, j * textureSize,
                             textureSize, textureSize);
                 }
             }
         }
-        game.batch.draw(sadFace, playerChar.x * textureSize, playerChar.y * textureSize,
-                textureSize, textureSize);
+        //game.batch.draw(sadFace, playerChar.x * textureSize, playerChar.y * textureSize,
+        //        textureSize, textureSize);
         game.batch.end();
     }
 
@@ -289,16 +323,36 @@ public class GameplayScreen implements Screen, InputProcessor {
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
         worldTouch = new Vector3((int) worldTouch.x / textureSize,
                 (int) worldTouch.y / textureSize, 0);
+        //if within the bounds of the world
         if((worldTouch.x > 0 && worldTouch.x < tiledMapWidth) &&
                 (worldTouch.y > 0 && worldTouch.y < tiledMapHeight)) {
-            if((newMap[(int) worldTouch.x][(int) worldTouch.y] == 0) &&
+            //if within one tile from the player character
+            if((newMap[(int) worldTouch.x][(int) worldTouch.y] != 1) &&
                     ((Math.abs(worldTouch.x - playerChar.x) == 1 ||
                     Math.abs(worldTouch.x - playerChar.x) == 0) &&
                             (Math.abs(worldTouch.y - playerChar.y) == 1 ||
                                     (Math.abs(worldTouch.y - playerChar.y) == 0)))) {
-                playerChar.x = worldTouch.x;
-                playerChar.y = worldTouch.y;
-                camera.position.set(playerChar.x * textureSize, playerChar.y * textureSize, 0);
+                //System.out.println(newMap[(int) worldTouch.x][(int) worldTouch.y]);
+                if (newMap[(int) worldTouch.x][(int) worldTouch.y] == 3) {
+                    damage = playerChar.ATK - standardEnemy.DEF;
+                    //System.out.println(damage);
+                    if(standardEnemy.HP > 0) {
+                        standardEnemy.HP = standardEnemy.HP - damage;
+                    }
+                    if(standardEnemy.HP <= 0) {
+                        standardEnemy.die();
+                        newMap[standardEnemy.x][standardEnemy.y] = 0;
+                    }
+                    System.out.println(standardEnemy.HP);
+                    //standardEnemy.target(playerChar);
+                }
+                else if (newMap[(int) worldTouch.x][(int) worldTouch.y] == 0 ) {
+                    newMap[playerChar.x][playerChar.y] = 0;
+                    playerChar.x = (int) worldTouch.x;
+                    playerChar.y = (int) worldTouch.y;
+                    newMap[playerChar.x][playerChar.y] = 2;
+                    camera.position.set(playerChar.x * textureSize, playerChar.y * textureSize, 0);
+                }
             }
         }
         System.out.println(worldTouch.x + " " + worldTouch.y);
