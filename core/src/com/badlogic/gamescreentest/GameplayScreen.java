@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.PriorityQueue;
 import java.util.Random;
 
-import javafx.collections.transformation.SortedList;
 
 /**
  * Created by admin on 6/8/2016.
@@ -28,38 +27,23 @@ public class GameplayScreen implements Screen, InputProcessor {
     OrthographicCamera camera;
     //Stage stage;
     AssetManager assetManager;
+    Texture happyFace, neutralFace, sadFace, badLogic, uglySean;
     Random rand;
-    Texture happyFace;
-    Texture neutralFace;
-    Texture sadFace;
-    Texture badLogic;
-    Texture uglySean;
 
     PlayerCharacter playerChar;
     Array<standardEnemy> enemies;
 
-    int[][] ogMap;
-    int[][] newMap;
-    int[][] path;
-    Array<Node> enemyNodes;
+    int[][] ogMap, newMap, path;
     ArrayList<Node> closed;
     PriorityQueue<Node> open;
 
-    float cellWidth;
-    float cellHeight;
-    float screenWidth;
-    float screenHeight;
-    int tiledMapWidth;
-    int tiledMapHeight;
-    int textureSize;
-    int wallCount;
+    float screenWidth, screenHeight, cellWidth, getCellHeight;
+    int tiledMapWidth, tiledMapHeight;
+    int FLOOR, WALL, PLAYER, ENEMY;
+    int TEXTURESIZE;
+    int enemyNum, wallCount;
 
-    int ranPosX;
-    int ranPosY;
-    int startPosX;
-    int startPosY;
-    int endPosX;
-    int endPosY;
+    int ranPosX, ranPosY, startPosX, startPosY, endPosX, endPosY;
     int damage;
 
     Vector2 userTouch;
@@ -68,17 +52,24 @@ public class GameplayScreen implements Screen, InputProcessor {
     public GameplayScreen(final GameScreen gam) {
         screenWidth = Gdx.graphics.getWidth();
         screenHeight = Gdx.graphics.getHeight();
-        cellWidth = screenWidth / 5;
-        cellHeight = screenHeight / 4;
-        textureSize = 32;
+        //cellWidth = screenWidth / 5;
+        //cellHeight = screenHeight / 4;
+
+        TEXTURESIZE = 32;
+        FLOOR = 0;
+        WALL = 1;
+        PLAYER = 2;
+        ENEMY = 3;
+
         rand = new Random();
         tiledMapWidth = randInt(25, 40);
         tiledMapHeight = randInt(25, 40);
-        int enemyNum = randInt(5, 10);
-        enemyNodes = new Array<Node>();
+        enemyNum = randInt(5, 10);
 
+        //initialize the player character's stats
         playerChar = new PlayerCharacter(randInt(10, 15), randInt(1, 2),
                 0, randInt(0, 10));
+        //initialize a random-sized array of standard enemies and their stats
         enemies = new Array<standardEnemy>();
         for(int i = 0; i < enemyNum; i++) {
             enemies.add(new standardEnemy(randInt(10, 15), randInt(1, 2),
@@ -87,7 +78,7 @@ public class GameplayScreen implements Screen, InputProcessor {
 
         //set up the Game, SpriteBatch, and OrthographicCamera
         this.game = gam;
-        camera = new OrthographicCamera(15 * textureSize, 10 * textureSize);
+        camera = new OrthographicCamera(15 * TEXTURESIZE, 10 * TEXTURESIZE);
         //camera = new OrthographicCamera(screenWidth, screenHeight);
 
         //get, after loading, the assets
@@ -102,28 +93,25 @@ public class GameplayScreen implements Screen, InputProcessor {
         newMap = createWorld();
 
         //initialize player character position
-        while(newMap[ranPosX][ranPosY] != 0) {
+        while(newMap[ranPosX][ranPosY] != FLOOR) {
             ranPosX = randInt(1, (tiledMapWidth - 1));
             ranPosY = randInt(1, (tiledMapHeight - 1));
         }
         playerChar.x = ranPosX;
         playerChar.y = ranPosY;
-        newMap[playerChar.x][playerChar.y] = 2;
-        camera.position.set(playerChar.x * textureSize, playerChar.y * textureSize, 0);
+        newMap[playerChar.x][playerChar.y] = PLAYER;
+        camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
         //camera.position.set(camera.viewportWidth/2f, camera.viewportHeight/2f, 0);
         camera.update();
 
         for(int i = 0; i < enemies.size; i++) {
-            Node enemy = new Node();
-            while(newMap[ranPosX][ranPosY] != 0) {
+            while(newMap[ranPosX][ranPosY] != FLOOR) {
                 ranPosX = randInt(1, (tiledMapWidth - 1));
                 ranPosY = randInt(1, (tiledMapHeight - 1));
             }
-            enemies.get(i).x = enemy.x = ranPosX;
-            enemies.get(i).y = enemy.y = ranPosY;
-            newMap[enemies.get(i).x][enemies.get(i).y] = 3;
-            enemyNodes.add(enemy);
-            //System.out.println(standardEnemy.x + " " + standardEnemy.y);
+            enemies.get(i).x = ranPosX;
+            enemies.get(i).y = ranPosY;
+            newMap[enemies.get(i).x][enemies.get(i).y] = ENEMY;
         }
 
         //InputMultiplexer im = new InputMultiplexer(stage, this);
@@ -135,14 +123,14 @@ public class GameplayScreen implements Screen, InputProcessor {
         for(int i = 0; i < tiledMapWidth; i++) {
             for(int j = 0; j < tiledMapHeight; j++) {
                 if(randInt(0, 100) < 40) {
-                    ogMap[i][j] = 1;
+                    ogMap[i][j] = WALL;
                 }
             }
         }
 
         ranPosX = randInt(1, (tiledMapWidth - 1));
         ranPosY = randInt(1, (tiledMapHeight - 1));
-        while(ogMap[ranPosX][ranPosY] != 0) {
+        while(ogMap[ranPosX][ranPosY] != FLOOR) {
             ranPosX = randInt(1, (tiledMapWidth - 1));
             ranPosY = randInt(1, (tiledMapHeight - 1));
         }
@@ -199,16 +187,16 @@ public class GameplayScreen implements Screen, InputProcessor {
 
                 for (int rowNum = startPosX; rowNum <= endPosX; rowNum++) {
                     for (int colNum = startPosY; colNum <= endPosY; colNum++) {
-                        if(oldMap[rowNum][colNum] == 1) {
+                        if(oldMap[rowNum][colNum] == WALL) {
                             wallCount++;
                         }
                     }
                 }
-                if(oldMap[i][j] == 1 && wallCount >= 4) {
-                    newMap[i][j] = 1;
+                if(oldMap[i][j] == WALL && wallCount >= 4) {
+                    newMap[i][j] = WALL;
                 }
                 else if(wallCount >= 5) {
-                    newMap[i][j] = 1;
+                    newMap[i][j] = WALL;
                 }
                 wallCount = 0;
             }
@@ -228,13 +216,13 @@ public class GameplayScreen implements Screen, InputProcessor {
 
                 for (int rowNum = startPosX; rowNum <= endPosX; rowNum++) {
                     for (int colNum = startPosY; colNum <= endPosY; colNum++) {
-                        if(oldMap[rowNum][colNum] == 1) {
+                        if(oldMap[rowNum][colNum] == WALL) {
                             wallCount++;
                         }
                     }
                 }
                 if(wallCount <= 2){
-                    newMap[i][j] = 1;
+                    newMap[i][j] = WALL;
                 }
                 wallCount = 0;
             }
@@ -244,12 +232,12 @@ public class GameplayScreen implements Screen, InputProcessor {
 
     public int[][] mapBorders(int[][] map) {
         for(int i = 0; i < tiledMapWidth; i++) {
-            map[i][0] = 1;
-            map[i][tiledMapHeight - 1] = 1;
+            map[i][0] = WALL;
+            map[i][tiledMapHeight - 1] = WALL;
         }
         for(int j = 0; j < tiledMapHeight; j++) {
-            map[0][j] = 1;
-            map[tiledMapWidth - 1][j] = 1;
+            map[0][j] = WALL;
+            map[tiledMapWidth - 1][j] = WALL;
         }
         return map;
     }
@@ -262,58 +250,82 @@ public class GameplayScreen implements Screen, InputProcessor {
     Outputs: Array<Node>
      */
     public Array<Node> aStarPathFinding(Node start, Node goal) {
-        Node bestPath;
-        Node[] neighbours;
+        Node nextBest;
+        Array<Node> neighbours;
+        start.setCost(0);
+
+        //initialize an open and closed data structure
         open = new PriorityQueue<Node>();
         closed = new ArrayList<Node>();
 
-        if (goal == start) {
+        //check if start node is already the goal node and if it is,
+        //return the path
+        if((start.getCurrentX() == goal.getCurrentX()) &&
+                (start.getCurrentY() == goal.getCurrentY())) {
             return makePath(start);
         }
 
-        open.clear();
+        //if not, store the start node into open
         open.add(start);
+
+        //clear the closed list to ensure a new closed list
         closed.clear();
+
+        //while there are still nodes unchecked in open, perform the following:
         while(!open.isEmpty()) {
-            bestPath = open.poll();
-            neighbours = expand(bestPath);
-            for(int i = 0; i < neighbours.length; i++) {
-                if((newMap[neighbours[i].x][neighbours[i].y] != 0)||
-                        (neighbours[i].x < 1) ||
-                        (neighbours[i].x > tiledMapWidth - 1) ||
-                        (neighbours[i].y < 1) ||
-                        (neighbours[i].y > tiledMapHeight - 1)){
-                    continue;
-                }
-                neighbours[i].cost = (bestPath.cost + 1) + heuristic(neighbours[i], goal);
-                if(neighbours[i].x == goal.x && neighbours[i].y == goal.y) {
-                    return makePath(neighbours[i]);
-                }
-                if((closed.contains(neighbours[i]) == false) ||
-                        (open.contains(neighbours[i]) == false)) {
-                    /*
-                    if(!open.isEmpty()) {
-                        open.add(neighbours[i].compareTo(neighbours[i-1]));
-                    }*/
-                }
-                else{
-                    System.out.println("GOODBYE");
-                }
-                /*
-                if(closed.contains(neighbours[i]) == neighbours[i].compareTo(0)) {
-                    System.out.println("HI");
-                }*/
-                /*
-                if(open.contains(neighbours[i]) == false) {
-                    if(closed.contains(neighbours[i])) {
+            //sort the open list & in this sort, the compareTo() should move
+            //the node with the least cost to the head **priority q auto does it
 
-                    }
-                    open.add(neighbours[i]);
-                }*/
+            //remove the first node in open & set it as the best next step
+            nextBest = open.poll();
+            System.out.println("NEW NODE: ");
+            System.out.println(nextBest.getCurrentX() + " " + nextBest.getCurrentY());
+
+            //expand this next best step's neighbours into an array of nodes
+            neighbours = expand(nextBest);
+            System.out.println("SIZE: " + neighbours.size);
+            for(int i = 0; i < neighbours.size; i++) {
+                System.out.println(neighbours.get(i).getCurrentX() + " " + neighbours.get(i).getCurrentY());
+                neighbours.get(i).setCost((nextBest.getCost() + 1) +
+                        (heuristic(neighbours.get(i), goal)));
+                System.out.println("COST: " + neighbours.get(i).getCost());
+                open.add(neighbours.get(i));
             }
-            closed.add(bestPath);
-        }
 
+            for(int i = 0; i < open.size(); i++) {
+                System.out.println(open.poll().getCost());
+            }
+
+/*
+            //for each node in the neighbours array
+            for(int i = 0; i < neighbours.size; i++) {
+                //calculate the cost of the node
+                neighbours.get(i).setCost((nextBest.getCost() + 1) +
+                        (heuristic(neighbours.get(i), goal)));
+
+                //check to see if the neighbour is the goal node and if it is,
+                //return the path with the neighbour
+                if((neighbours.get(i).getCurrentX() == goal.getCurrentX()) &&
+                        (neighbours.get(i).getCurrentY() == goal.getCurrentY())) {
+                    return makePath(neighbours.get(i));
+                }
+
+                //if the node isn't in closed/open then set its parent to the
+                //next best node and then add the node to the open list
+                if(!closed.contains(neighbours.get(i), true) &&
+                        (!open.contains(neighbours.get(i)))) {
+                    neighbours.get(i).setParent(nextBest);
+                    open.add(neighbours.get(i));
+                }
+
+                if(!closed.contains(neighbours.get(i))) {
+                    neighbours.get(i).setParent(nextBest);
+                    open.add(neighbours.get(i));
+                }
+            }
+            //add the next best step to closed
+            closed.add(nextBest);*/
+        }
         return null;
     }
 
@@ -321,11 +333,10 @@ public class GameplayScreen implements Screen, InputProcessor {
     Description: expands an input node and stores its neighbours into a Node array
     Function: expand
     Inputs: node : Node
-    Outputs: Node[]
+    Outputs: Array<Node>
      */
-    public Node[] expand(Node node) {
-        int pos = 0;
-        Node[] neighbours = new Node[8];
+    public Array<Node> expand(Node node) {
+        Array<Node> neighbours = new Array<Node>();
 
         for (int x = -1; x < 2; x++) {
             for (int y = -1; y < 2; y++) {
@@ -333,12 +344,15 @@ public class GameplayScreen implements Screen, InputProcessor {
                     continue;
                 }
 
-                //create a new Node object and store it into neighbours
-                Node adjNode = new Node();
-                adjNode.x = x + node.x;
-                adjNode.y = y + node.y;
-                neighbours[pos] = adjNode;
-                pos = pos + 1;
+                //if a neighbour isn't within the bounds of the world/isn't a floor,
+                //don't initialize and store them into the neighbours array
+                if(newMap[x + node.getCurrentX()][y + node.getCurrentY()] == FLOOR) {
+                    //create a new Node object and store it into neighbours
+                    Node adjNode = new Node();
+                    adjNode.setCurrentX(x + node.getCurrentX());
+                    adjNode.setCurrentY(y + node.getCurrentY());
+                    neighbours.add(adjNode);
+                }
             }
         }
         return neighbours;
@@ -351,10 +365,10 @@ public class GameplayScreen implements Screen, InputProcessor {
     Outputs: int
      */
     public int heuristic(Node node, Node goal) {
-        int D = textureSize;
+        int D = TEXTURESIZE;
         int D2 = 45;
-        int dx = Math.abs(node.x - goal.x);
-        int dy = Math.abs(node.y - goal.y);
+        int dx = Math.abs(node.getCurrentX() - goal.getCurrentX());
+        int dy = Math.abs(node.getCurrentY() - goal.getCurrentY());
         return D * (dx + dy) + (D2 - 2 * D) * Math.min(dx, dy);
     }
 
@@ -383,21 +397,21 @@ public class GameplayScreen implements Screen, InputProcessor {
         game.batch.begin();
         for(int i = 0; i < tiledMapWidth; i++) {
             for (int j = 0; j < tiledMapHeight; j++) {
-                if (newMap[i][j] == 1) {
-                    game.batch.draw(happyFace, i * textureSize, j * textureSize,
-                            textureSize, textureSize);
+                if (newMap[i][j] == WALL) {
+                    game.batch.draw(happyFace, i * TEXTURESIZE, j * TEXTURESIZE,
+                            TEXTURESIZE, TEXTURESIZE);
                 }
-                else if (newMap[i][j] == 2) {
-                    game.batch.draw(sadFace, playerChar.x * textureSize, playerChar.y * textureSize,
-                            textureSize, textureSize);
+                else if (newMap[i][j] == PLAYER) {
+                    game.batch.draw(sadFace, playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE,
+                            TEXTURESIZE, TEXTURESIZE);
                 }
-                else if (newMap[i][j] == 3) {
-                    game.batch.draw(neutralFace, i * textureSize, j * textureSize,
-                            textureSize, textureSize);
+                else if (newMap[i][j] == ENEMY) {
+                    game.batch.draw(neutralFace, i * TEXTURESIZE, j * TEXTURESIZE,
+                            TEXTURESIZE, TEXTURESIZE);
                 }
                 else {
-                    game.batch.draw(badLogic, i * textureSize, j * textureSize,
-                            textureSize, textureSize);
+                    game.batch.draw(badLogic, i * TEXTURESIZE, j * TEXTURESIZE,
+                            TEXTURESIZE, TEXTURESIZE);
                 }
             }
         }
@@ -456,18 +470,18 @@ public class GameplayScreen implements Screen, InputProcessor {
 
     @Override
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
-        worldTouch = new Vector3((int) worldTouch.x / textureSize,
-                (int) worldTouch.y / textureSize, 0);
+        worldTouch = new Vector3((int) worldTouch.x / TEXTURESIZE,
+                (int) worldTouch.y / TEXTURESIZE, 0);
         //if within the bounds of the world
         if((worldTouch.x > 0 && worldTouch.x < tiledMapWidth) &&
                 (worldTouch.y > 0 && worldTouch.y < tiledMapHeight)) {
             //if within one tile from the player character
-            if((newMap[(int) worldTouch.x][(int) worldTouch.y] != 1) &&
+            if((newMap[(int) worldTouch.x][(int) worldTouch.y] != WALL) &&
                     ((Math.abs(worldTouch.x - playerChar.x) == 1 ||
                     Math.abs(worldTouch.x - playerChar.x) == 0) &&
                             (Math.abs(worldTouch.y - playerChar.y) == 1 ||
                                     (Math.abs(worldTouch.y - playerChar.y) == 0)))) {
-                if (newMap[(int) worldTouch.x][(int) worldTouch.y] == 3) {
+                if (newMap[(int) worldTouch.x][(int) worldTouch.y] == ENEMY) {
                     for(int i = 0; i < enemies.size; i++) {
                         if(worldTouch.x == enemies.get(i).x &&
                                 worldTouch.y == enemies.get(i).y) {
@@ -478,31 +492,58 @@ public class GameplayScreen implements Screen, InputProcessor {
                             }
                             if(enemies.get(i).HP <= 0) {
                                 enemies.get(i).die();
-                                newMap[enemies.get(i).x][enemies.get(i).y] = 0;
+                                newMap[enemies.get(i).x][enemies.get(i).y] = FLOOR;
                             }
                             System.out.println(enemies.get(i).HP);
-                            //standardEnemy.target(playerChar);
                         }
                     }
                 }
-                else if (newMap[(int) worldTouch.x][(int) worldTouch.y] == 0 ) {
-                    System.out.println(enemies.get(0).x + " " + enemies.get(0).y);
-                    newMap[playerChar.x][playerChar.y] = 0;
+                else if (newMap[(int) worldTouch.x][(int) worldTouch.y] == FLOOR) {
+                    newMap[playerChar.x][playerChar.y] = FLOOR;
                     playerChar.x = (int) worldTouch.x;
                     playerChar.y = (int) worldTouch.y;
-                    newMap[playerChar.x][playerChar.y] = 2;
-                    camera.position.set(playerChar.x * textureSize, playerChar.y * textureSize, 0);
-                    Node start = new Node();
-                    start.x = playerChar.x;
-                    start.y = playerChar.y;
-                    Array<Node> enemyPath = aStarPathFinding(enemyNodes.first(), start);
-//                    System.out.println(enemies.get(0).x + " " + enemies.get(0).y + " " + enemyPath.size);
-                    //enemies.get(0).behaviour(enemyPath);
-                    //System.out.println(enemies.get(0).x + " " + enemies.get(0).y + " " + enemyPath.size);
+                    newMap[playerChar.x][playerChar.y] = PLAYER;
+                    camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
+
+                    //initialize a goal node for pathfinding (player character)
+                    Node goalNode = new Node();
+                    goalNode.setCurrentX(playerChar.getX());
+                    goalNode.setCurrentY(playerChar.getY());
+
+                    //enemies move towards the player one step at a time too
+                    for(int i = 0; i < enemies.size; i++) {
+                        //initialize a start node for pathfinding (enemies)
+                        Node startNode = new Node();
+                        startNode.setCurrentX(enemies.get(i).getX());
+                        startNode.setCurrentY(enemies.get(i).getY());
+/*
+                        System.out.println("\n" + "Enemy node: " + startNode.getCurrentX() + " " + startNode.getCurrentY());
+                        Array<Node> expandedArray = expand(startNode);
+                        for(int j = 0; j < expandedArray.size; j++) {
+                            System.out.print(expandedArray.get(j).currentX + " " + expandedArray.get(j).getCurrentY() + " ");
+                            System.out.println(heuristic(expandedArray.get(j), goalNode));
+                        }
+                        */
+
+                        Array<Node> path = aStarPathFinding(startNode, goalNode);
+
+                        //create the path from the enemy to the player character
+                    //    Array<Node> path = aStarPathFinding(startNode, goalNode);
+                        /*
+                        for(int j = 0; i < path.size; i++) {
+                            System.out.println(path.get(i).getCurrentX() + " " + path.get(i).getCurrentY());
+                        }*/
+/*
+                        //move the enemy units one tile closer to the player
+                        newMap[enemies.get(i).x][enemies.get(i).y] = FLOOR;
+                        enemies.get(i).x = path.get(0).getCurrentX();
+                        enemies.get(i).y = path.get(0).getCurrentY();
+                        newMap[enemies.get(i).x][enemies.get(i).y] = ENEMY; */
+                    }
                 }
             }
         }
-        //System.out.println(worldTouch.x + " " + worldTouch.y);
+        System.out.println("\n" + "Touch: " + worldTouch.x + " " + worldTouch.y);
         return true;
     }
 
