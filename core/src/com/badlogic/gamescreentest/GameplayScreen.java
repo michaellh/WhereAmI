@@ -13,7 +13,12 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
+
+import java.util.ArrayList;
+import java.util.PriorityQueue;
 import java.util.Random;
+
+import javafx.collections.transformation.SortedList;
 
 /**
  * Created by admin on 6/8/2016.
@@ -31,11 +36,14 @@ public class GameplayScreen implements Screen, InputProcessor {
     Texture uglySean;
 
     PlayerCharacter playerChar;
-    standardEnemy standardEnemy;
     Array<standardEnemy> enemies;
 
     int[][] ogMap;
     int[][] newMap;
+    int[][] path;
+    Array<Node> enemyNodes;
+    ArrayList<Node> closed;
+    PriorityQueue<Node> open;
 
     float cellWidth;
     float cellHeight;
@@ -54,7 +62,6 @@ public class GameplayScreen implements Screen, InputProcessor {
     int endPosY;
     int damage;
 
-    //Vector2 playerChar;
     Vector2 userTouch;
     Vector3 worldTouch;
 
@@ -67,14 +74,15 @@ public class GameplayScreen implements Screen, InputProcessor {
         rand = new Random();
         tiledMapWidth = randInt(25, 40);
         tiledMapHeight = randInt(25, 40);
+        int enemyNum = randInt(5, 10);
+        enemyNodes = new Array<Node>();
 
         playerChar = new PlayerCharacter(randInt(10, 15), randInt(1, 2),
                 0, randInt(0, 10));
-        enemies = new Array<standardEnemy>(randInt(5, 10));
-        for(int i = randInt(5, 10); i > 0; i--) {
-            standardEnemy = new standardEnemy(randInt(10, 15), randInt(1, 2),
-                    0, randInt(0, 10));
-            enemies.add(standardEnemy);
+        enemies = new Array<standardEnemy>();
+        for(int i = 0; i < enemyNum; i++) {
+            enemies.add(new standardEnemy(randInt(10, 15), randInt(1, 2),
+                    0, randInt(0, 10)));
         }
 
         //set up the Game, SpriteBatch, and OrthographicCamera
@@ -105,14 +113,18 @@ public class GameplayScreen implements Screen, InputProcessor {
         //camera.position.set(camera.viewportWidth/2f, camera.viewportHeight/2f, 0);
         camera.update();
 
-        while(newMap[ranPosX][ranPosY] != 0) {
-            ranPosX = randInt(1, (tiledMapWidth - 1));
-            ranPosY = randInt(1, (tiledMapHeight - 1));
+        for(int i = 0; i < enemies.size; i++) {
+            Node enemy = new Node();
+            while(newMap[ranPosX][ranPosY] != 0) {
+                ranPosX = randInt(1, (tiledMapWidth - 1));
+                ranPosY = randInt(1, (tiledMapHeight - 1));
+            }
+            enemies.get(i).x = enemy.x = ranPosX;
+            enemies.get(i).y = enemy.y = ranPosY;
+            newMap[enemies.get(i).x][enemies.get(i).y] = 3;
+            enemyNodes.add(enemy);
+            //System.out.println(standardEnemy.x + " " + standardEnemy.y);
         }
-        //enemies. = ranPosX;
-        standardEnemy.y = ranPosY;
-        newMap[ranPosX][ranPosY] = 3;
-        //System.out.println(standardEnemy.x + " " + standardEnemy.y);
 
         //InputMultiplexer im = new InputMultiplexer(stage, this);
         Gdx.input.setInputProcessor(this);
@@ -242,6 +254,125 @@ public class GameplayScreen implements Screen, InputProcessor {
         return map;
     }
 
+    /*
+    Description: determines the optimal path from start to goal and returns it in
+                 in the form of an array
+    Function: aStarPathFinding
+    Inputs: start : Node, goal : Node
+    Outputs: Array<Node>
+     */
+    public Array<Node> aStarPathFinding(Node start, Node goal) {
+        Node bestPath;
+        Node[] neighbours;
+        open = new PriorityQueue<Node>();
+        closed = new ArrayList<Node>();
+
+        if (goal == start) {
+            return makePath(start);
+        }
+
+        open.clear();
+        open.add(start);
+        closed.clear();
+        while(!open.isEmpty()) {
+            bestPath = open.poll();
+            neighbours = expand(bestPath);
+            for(int i = 0; i < neighbours.length; i++) {
+                if((newMap[neighbours[i].x][neighbours[i].y] != 0)||
+                        (neighbours[i].x < 1) ||
+                        (neighbours[i].x > tiledMapWidth - 1) ||
+                        (neighbours[i].y < 1) ||
+                        (neighbours[i].y > tiledMapHeight - 1)){
+                    continue;
+                }
+                neighbours[i].cost = (bestPath.cost + 1) + heuristic(neighbours[i], goal);
+                if(neighbours[i].x == goal.x && neighbours[i].y == goal.y) {
+                    return makePath(neighbours[i]);
+                }
+                if((closed.contains(neighbours[i]) == false) ||
+                        (open.contains(neighbours[i]) == false)) {
+                    /*
+                    if(!open.isEmpty()) {
+                        open.add(neighbours[i].compareTo(neighbours[i-1]));
+                    }*/
+                }
+                else{
+                    System.out.println("GOODBYE");
+                }
+                /*
+                if(closed.contains(neighbours[i]) == neighbours[i].compareTo(0)) {
+                    System.out.println("HI");
+                }*/
+                /*
+                if(open.contains(neighbours[i]) == false) {
+                    if(closed.contains(neighbours[i])) {
+
+                    }
+                    open.add(neighbours[i]);
+                }*/
+            }
+            closed.add(bestPath);
+        }
+
+        return null;
+    }
+
+    /*
+    Description: expands an input node and stores its neighbours into a Node array
+    Function: expand
+    Inputs: node : Node
+    Outputs: Node[]
+     */
+    public Node[] expand(Node node) {
+        int pos = 0;
+        Node[] neighbours = new Node[8];
+
+        for (int x = -1; x < 2; x++) {
+            for (int y = -1; y < 2; y++) {
+                if ((x == 0) && (y == 0)) {
+                    continue;
+                }
+
+                //create a new Node object and store it into neighbours
+                Node adjNode = new Node();
+                adjNode.x = x + node.x;
+                adjNode.y = y + node.y;
+                neighbours[pos] = adjNode;
+                pos = pos + 1;
+            }
+        }
+        return neighbours;
+    }
+
+    /*
+    Description: calculates the cost required to reach the goal from a node
+    Function: heuristic
+    Inputs: node : Node, goal : Node
+    Outputs: int
+     */
+    public int heuristic(Node node, Node goal) {
+        int D = textureSize;
+        int D2 = 45;
+        int dx = Math.abs(node.x - goal.x);
+        int dy = Math.abs(node.y - goal.y);
+        return D * (dx + dy) + (D2 - 2 * D) * Math.min(dx, dy);
+    }
+
+    /*
+    Description: creates a path from input start node to the goal node
+    Function: makePath
+    Inputs: node : Node
+    Outputs: Node[]
+     */
+    public Array<Node> makePath(Node node) {
+        Array<Node> path = new Array<Node>();
+        while (node.parent != null) {
+            node = node.parent;
+            path.add(node);
+        }
+        return path;
+    }
+
     @Override
     public void render(float delta) {
         camera.update();
@@ -261,7 +392,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                             textureSize, textureSize);
                 }
                 else if (newMap[i][j] == 3) {
-                    game.batch.draw(neutralFace, standardEnemy.x * textureSize, standardEnemy.y * textureSize,
+                    game.batch.draw(neutralFace, i * textureSize, j * textureSize,
                             textureSize, textureSize);
                 }
                 else {
@@ -270,11 +401,15 @@ public class GameplayScreen implements Screen, InputProcessor {
                 }
             }
         }
-        //game.batch.draw(sadFace, playerChar.x * textureSize, playerChar.y * textureSize,
-        //        textureSize, textureSize);
         game.batch.end();
     }
 
+    /*
+    Description: Generates a pseudo-random integer between two input integers
+    Function: randInt
+    Inputs: min : int, max : int
+    Outputs: int
+     */
     public int randInt(int min, int max) {
         int randNum = rand.nextInt((max - min) + 1) + min;
         return randNum;
@@ -332,30 +467,42 @@ public class GameplayScreen implements Screen, InputProcessor {
                     Math.abs(worldTouch.x - playerChar.x) == 0) &&
                             (Math.abs(worldTouch.y - playerChar.y) == 1 ||
                                     (Math.abs(worldTouch.y - playerChar.y) == 0)))) {
-                //System.out.println(newMap[(int) worldTouch.x][(int) worldTouch.y]);
                 if (newMap[(int) worldTouch.x][(int) worldTouch.y] == 3) {
-                    damage = playerChar.ATK - standardEnemy.DEF;
-                    //System.out.println(damage);
-                    if(standardEnemy.HP > 0) {
-                        standardEnemy.HP = standardEnemy.HP - damage;
+                    for(int i = 0; i < enemies.size; i++) {
+                        if(worldTouch.x == enemies.get(i).x &&
+                                worldTouch.y == enemies.get(i).y) {
+                            damage = playerChar.ATK - enemies.get(i).DEF;
+                            //System.out.println(damage);
+                            if(enemies.get(i).HP > 0) {
+                                enemies.get(i).HP = enemies.get(i).HP - damage;
+                            }
+                            if(enemies.get(i).HP <= 0) {
+                                enemies.get(i).die();
+                                newMap[enemies.get(i).x][enemies.get(i).y] = 0;
+                            }
+                            System.out.println(enemies.get(i).HP);
+                            //standardEnemy.target(playerChar);
+                        }
                     }
-                    if(standardEnemy.HP <= 0) {
-                        standardEnemy.die();
-                        newMap[standardEnemy.x][standardEnemy.y] = 0;
-                    }
-                    System.out.println(standardEnemy.HP);
-                    //standardEnemy.target(playerChar);
                 }
                 else if (newMap[(int) worldTouch.x][(int) worldTouch.y] == 0 ) {
+                    System.out.println(enemies.get(0).x + " " + enemies.get(0).y);
                     newMap[playerChar.x][playerChar.y] = 0;
                     playerChar.x = (int) worldTouch.x;
                     playerChar.y = (int) worldTouch.y;
                     newMap[playerChar.x][playerChar.y] = 2;
                     camera.position.set(playerChar.x * textureSize, playerChar.y * textureSize, 0);
+                    Node start = new Node();
+                    start.x = playerChar.x;
+                    start.y = playerChar.y;
+                    Array<Node> enemyPath = aStarPathFinding(enemyNodes.first(), start);
+//                    System.out.println(enemies.get(0).x + " " + enemies.get(0).y + " " + enemyPath.size);
+                    //enemies.get(0).behaviour(enemyPath);
+                    //System.out.println(enemies.get(0).x + " " + enemies.get(0).y + " " + enemyPath.size);
                 }
             }
         }
-        System.out.println(worldTouch.x + " " + worldTouch.y);
+        //System.out.println(worldTouch.x + " " + worldTouch.y);
         return true;
     }
 

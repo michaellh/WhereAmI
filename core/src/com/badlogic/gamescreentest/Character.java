@@ -12,5 +12,13 @@ public class Character {
     int DEF;
     int LUK;
 
-    public void die() {};
+    public int getX() {
+        return x;
+    }
+
+    public int getY() {
+        return y;
+    }
+
+    public void die() {}
 }
