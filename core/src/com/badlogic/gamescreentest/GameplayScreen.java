@@ -287,16 +287,15 @@ public class GameplayScreen implements Screen, InputProcessor {
                 return makePath(nextBest);
             }
 
-            //mark nextBest as having been read
-            closed.add(nextBest);
             System.out.println("\n" + "ENEMY NODE: " + nextBest.getCurrentX() + " " + nextBest.getCurrentY());
+            System.out.println(nextBest.getfScore());
 
             //expand this next best step's neighbours into an array of nodes
             Array<Node> neighbours = expand(nextBest);
             //System.out.println("NUMBER OF NEIGHBOURS: " + neighbours.size);
 
             for (int i = 0; i < neighbours.size; i++) {
-                System.out.println(neighbours.get(i).getCurrentX() + " " + neighbours.get(i).getCurrentY());
+                //System.out.println(neighbours.get(i).getCurrentX() + " " + neighbours.get(i).getCurrentY());
 
                 //if the node isn't in closed then set its parent to the
                 //next best node and then add the node to the open list
@@ -304,15 +303,9 @@ public class GameplayScreen implements Screen, InputProcessor {
                     int tempGScore = nextBest.getgScore() + 1;
                     neighbours.get(i).setfScore(neighbours.get(i).getgScore() +
                             heuristic(neighbours.get(i), goal));
-
-                    if ((neighbours.get(i).getCurrentX() == goal.getCurrentX()) &&
-                            (neighbours.get(i).getCurrentY() == goal.getCurrentY())) {
-                        System.out.println("WE DID IT2");
-                        return makePath(neighbours.get(i));
-                    }
+                    System.out.print(neighbours.get(i).getfScore() + " ");
 
                     if(!open.contains(neighbours.get(i))) {
-                        neighbours.get(i).setParent(nextBest);
                         open.add(neighbours.get(i));
                     }
                     else{
@@ -320,9 +313,18 @@ public class GameplayScreen implements Screen, InputProcessor {
                             continue;
                         }
                     }
+                    neighbours.get(i).setParent(nextBest);
                     neighbours.get(i).setgScore(tempGScore);
+
+                    if ((neighbours.get(i).getCurrentX() == goal.getCurrentX()) &&
+                            (neighbours.get(i).getCurrentY() == goal.getCurrentY())) {
+                        System.out.println("\n"+ "WE DID IT2");
+                        return makePath(neighbours.get(i));
+                    }
                 }
             }
+            //mark nextBest as having been read
+            closed.add(nextBest);
         }
         return null;
     }
@@ -383,6 +385,7 @@ public class GameplayScreen implements Screen, InputProcessor {
             node = node.parent;
             path.add(node);
         }
+        path.reverse();
         return path;
     }
 
@@ -511,6 +514,10 @@ public class GameplayScreen implements Screen, InputProcessor {
 
                     //enemies move towards the player one step at a time too
                     for(int i = 0; i < enemies.size; i++) {
+                        if(enemies.size <= 0) {
+                            break;
+                        }
+
                         //initialize a start node for pathfinding (enemies)
                         Node startNode = new Node();
                         startNode.setCurrentX(enemies.get(i).getX());
@@ -527,18 +534,16 @@ public class GameplayScreen implements Screen, InputProcessor {
                         Array<Node> path = aStarPathFinding(startNode, goalNode);
                         System.out.println(path.size);
 
-                        //create the path from the enemy to the player character
-                    //    Array<Node> path = aStarPathFinding(startNode, goalNode);
-                        /*
-                        for(int j = 0; i < path.size; i++) {
-                            System.out.println(path.get(i).getCurrentX() + " " + path.get(i).getCurrentY());
-                        }*/
-/*
+                        if(path.size == 1) {
+                            System.out.println("HI");
+                            continue;
+                        }
+
                         //move the enemy units one tile closer to the player
                         newMap[enemies.get(i).x][enemies.get(i).y] = FLOOR;
-                        enemies.get(i).x = path.get(0).getCurrentX();
-                        enemies.get(i).y = path.get(0).getCurrentY();
-                        newMap[enemies.get(i).x][enemies.get(i).y] = ENEMY; */
+                        enemies.get(i).x = path.get(1).getCurrentX();
+                        enemies.get(i).y = path.get(1).getCurrentY();
+                        newMap[enemies.get(i).x][enemies.get(i).y] = ENEMY;
                     }
                 }
             }

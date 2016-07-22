@@ -54,4 +54,19 @@ public class Node implements Comparable<Node>{
     public int compareTo(Node o) {
         return Integer.compare(this.fScore, o.getfScore());
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        boolean identical = false;
+        if(obj instanceof Node) {
+            identical = (this.getCurrentX() == ((Node) obj).getCurrentX())  &&
+                    (this.getCurrentY() == ((Node) obj).getCurrentY());
+        }
+        return identical;
+    }
+
+    @Override
+    public int hashCode() {
+        return this.getfScore();
+    }
 }
