@@ -15,6 +15,7 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.PriorityQueue;
 import java.util.Random;
 
@@ -71,7 +72,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                 0, randInt(0, 10));
         //initialize a random-sized array of standard enemies and their stats
         enemies = new Array<standardEnemy>();
-        for(int i = 0; i < enemyNum; i++) {
+        for(int i = 0; i < 1; i++) {
             enemies.add(new standardEnemy(randInt(10, 15), randInt(1, 2),
                     0, randInt(0, 10)));
         }
@@ -250,81 +251,78 @@ public class GameplayScreen implements Screen, InputProcessor {
     Outputs: Array<Node>
      */
     public Array<Node> aStarPathFinding(Node start, Node goal) {
-        Node nextBest;
-        Array<Node> neighbours;
-        start.setCost(0);
-
         //initialize an open and closed data structure
         open = new PriorityQueue<Node>();
         closed = new ArrayList<Node>();
+
+        //clear the closed list to ensure a new closed list
+        closed.clear();
+        //cost of going from start to start is 0
+        start.setgScore(0);
+        start.setfScore(heuristic(start, goal));
 
         //check if start node is already the goal node and if it is,
         //return the path
         if((start.getCurrentX() == goal.getCurrentX()) &&
                 (start.getCurrentY() == goal.getCurrentY())) {
+            System.out.println("WE DID IT");
             return makePath(start);
         }
 
         //if not, store the start node into open
         open.add(start);
 
-        //clear the closed list to ensure a new closed list
-        closed.clear();
-
         //while there are still nodes unchecked in open, perform the following:
         while(!open.isEmpty()) {
             //sort the open list & in this sort, the compareTo() should move
             //the node with the least cost to the head **priority q auto does it
 
-            //remove the first node in open & set it as the best next step
-            nextBest = open.poll();
-            System.out.println("NEW NODE: ");
-            System.out.println(nextBest.getCurrentX() + " " + nextBest.getCurrentY());
+            //remove the first node with lowest cost in open & set it as the best next step
+            Node nextBest = open.poll();
+
+            //if nextBest is the goal then return with its path
+            if ((nextBest.getCurrentX() == goal.getCurrentX()) &&
+                    (nextBest.getCurrentX() == nextBest.getCurrentY())) {
+                System.out.println("WE DID IT1");
+                return makePath(nextBest);
+            }
+
+            //mark nextBest as having been read
+            closed.add(nextBest);
+            System.out.println("\n" + "ENEMY NODE: " + nextBest.getCurrentX() + " " + nextBest.getCurrentY());
 
             //expand this next best step's neighbours into an array of nodes
-            neighbours = expand(nextBest);
-            System.out.println("SIZE: " + neighbours.size);
-            for(int i = 0; i < neighbours.size; i++) {
+            Array<Node> neighbours = expand(nextBest);
+            //System.out.println("NUMBER OF NEIGHBOURS: " + neighbours.size);
+
+            for (int i = 0; i < neighbours.size; i++) {
                 System.out.println(neighbours.get(i).getCurrentX() + " " + neighbours.get(i).getCurrentY());
-                neighbours.get(i).setCost((nextBest.getCost() + 1) +
-                        (heuristic(neighbours.get(i), goal)));
-                System.out.println("COST: " + neighbours.get(i).getCost());
-                open.add(neighbours.get(i));
-            }
 
-            for(int i = 0; i < open.size(); i++) {
-                System.out.println(open.poll().getCost());
-            }
-
-/*
-            //for each node in the neighbours array
-            for(int i = 0; i < neighbours.size; i++) {
-                //calculate the cost of the node
-                neighbours.get(i).setCost((nextBest.getCost() + 1) +
-                        (heuristic(neighbours.get(i), goal)));
-
-                //check to see if the neighbour is the goal node and if it is,
-                //return the path with the neighbour
-                if((neighbours.get(i).getCurrentX() == goal.getCurrentX()) &&
-                        (neighbours.get(i).getCurrentY() == goal.getCurrentY())) {
-                    return makePath(neighbours.get(i));
-                }
-
-                //if the node isn't in closed/open then set its parent to the
+                //if the node isn't in closed then set its parent to the
                 //next best node and then add the node to the open list
-                if(!closed.contains(neighbours.get(i), true) &&
-                        (!open.contains(neighbours.get(i)))) {
-                    neighbours.get(i).setParent(nextBest);
-                    open.add(neighbours.get(i));
-                }
-
                 if(!closed.contains(neighbours.get(i))) {
-                    neighbours.get(i).setParent(nextBest);
-                    open.add(neighbours.get(i));
+                    int tempGScore = nextBest.getgScore() + 1;
+                    neighbours.get(i).setfScore(neighbours.get(i).getgScore() +
+                            heuristic(neighbours.get(i), goal));
+
+                    if ((neighbours.get(i).getCurrentX() == goal.getCurrentX()) &&
+                            (neighbours.get(i).getCurrentY() == goal.getCurrentY())) {
+                        System.out.println("WE DID IT2");
+                        return makePath(neighbours.get(i));
+                    }
+
+                    if(!open.contains(neighbours.get(i))) {
+                        neighbours.get(i).setParent(nextBest);
+                        open.add(neighbours.get(i));
+                    }
+                    else{
+                        if(tempGScore >= neighbours.get(i).getgScore()) {
+                            continue;
+                        }
+                    }
+                    neighbours.get(i).setgScore(tempGScore);
                 }
             }
-            //add the next best step to closed
-            closed.add(nextBest);*/
         }
         return null;
     }
@@ -346,7 +344,8 @@ public class GameplayScreen implements Screen, InputProcessor {
 
                 //if a neighbour isn't within the bounds of the world/isn't a floor,
                 //don't initialize and store them into the neighbours array
-                if(newMap[x + node.getCurrentX()][y + node.getCurrentY()] == FLOOR) {
+                if(newMap[x + node.getCurrentX()][y + node.getCurrentY()] == FLOOR ||
+                        newMap[x + node.getCurrentX()][y + node.getCurrentY()] == PLAYER) {
                     //create a new Node object and store it into neighbours
                     Node adjNode = new Node();
                     adjNode.setCurrentX(x + node.getCurrentX());
@@ -526,6 +525,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                         */
 
                         Array<Node> path = aStarPathFinding(startNode, goalNode);
+                        System.out.println(path.size);
 
                         //create the path from the enemy to the player character
                     //    Array<Node> path = aStarPathFinding(startNode, goalNode);

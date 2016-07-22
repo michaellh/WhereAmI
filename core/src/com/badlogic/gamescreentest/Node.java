@@ -6,7 +6,8 @@ package com.badlogic.gamescreentest;
 public class Node implements Comparable<Node>{
     int currentX;
     int currentY;
-    int cost;
+    int gScore;
+    int fScore;
     Node parent;
 
     public int getCurrentX() {
@@ -25,12 +26,20 @@ public class Node implements Comparable<Node>{
         currentY = y;
     }
 
-    public int getCost() {
-        return cost;
+    public void setgScore(int g) {
+        gScore = g;
     }
 
-    public void setCost(int c) {
-        cost = c;
+    public int getgScore() {
+        return gScore;
+    }
+
+    public void setfScore(int f) {
+        fScore = f;
+    }
+
+    public int getfScore() {
+        return fScore;
     }
 
     public void setParent(Node node) {
@@ -43,6 +52,6 @@ public class Node implements Comparable<Node>{
 
     @Override
     public int compareTo(Node o) {
-        return Integer.compare(this.cost, o.getCost());
+        return Integer.compare(this.fScore, o.getfScore());
     }
 }
