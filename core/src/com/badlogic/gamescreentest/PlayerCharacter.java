@@ -10,4 +10,19 @@ public class PlayerCharacter extends Character {
         this.DEF = defence;
         this.LUK = luck;
     }
+
+    @Override
+    public int takeDamage(int dmg) {
+        System.out.println("I'VE BEEN HIT!" + " " +"REMAINING HP: " + this.HP);
+        this.HP = this.HP - dmg;
+        if(this.HP <= 0) {
+            return 0;
+        }
+        return 2;
+    }
+
+    @Override
+    public void die() {
+        System.out.println("YOU HAVE CEASED TO EXIST");
+    }
 }

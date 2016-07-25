@@ -15,7 +15,6 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.PriorityQueue;
 import java.util.Random;
 
@@ -34,11 +33,11 @@ public class GameplayScreen implements Screen, InputProcessor {
     PlayerCharacter playerChar;
     Array<standardEnemy> enemies;
 
-    int[][] ogMap, newMap, path;
+    int[][] ogMap, newMap;
     ArrayList<Node> closed;
     PriorityQueue<Node> open;
 
-    float screenWidth, screenHeight, cellWidth, getCellHeight;
+    float screenWidth, screenHeight, cellWidth, cellHeight;
     int tiledMapWidth, tiledMapHeight;
     int FLOOR, WALL, PLAYER, ENEMY;
     int TEXTURESIZE;
@@ -46,6 +45,7 @@ public class GameplayScreen implements Screen, InputProcessor {
 
     int ranPosX, ranPosY, startPosX, startPosY, endPosX, endPosY;
     int damage;
+    int result;
 
     Vector2 userTouch;
     Vector3 worldTouch;
@@ -63,8 +63,8 @@ public class GameplayScreen implements Screen, InputProcessor {
         ENEMY = 3;
 
         rand = new Random();
-        tiledMapWidth = randInt(25, 40);
-        tiledMapHeight = randInt(25, 40);
+        tiledMapWidth = randInt(50, 100);
+        tiledMapHeight = randInt(50, 100);
         enemyNum = randInt(5, 10);
 
         //initialize the player character's stats
@@ -72,7 +72,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                 0, randInt(0, 10));
         //initialize a random-sized array of standard enemies and their stats
         enemies = new Array<standardEnemy>();
-        for(int i = 0; i < 1; i++) {
+        for(int i = 0; i < randInt(5, 10); i++) {
             enemies.add(new standardEnemy(randInt(10, 15), randInt(1, 2),
                     0, randInt(0, 10)));
         }
@@ -265,7 +265,7 @@ public class GameplayScreen implements Screen, InputProcessor {
         //return the path
         if((start.getCurrentX() == goal.getCurrentX()) &&
                 (start.getCurrentY() == goal.getCurrentY())) {
-            System.out.println("WE DID IT");
+            //System.out.println("WE DID IT");
             return makePath(start);
         }
 
@@ -283,12 +283,12 @@ public class GameplayScreen implements Screen, InputProcessor {
             //if nextBest is the goal then return with its path
             if ((nextBest.getCurrentX() == goal.getCurrentX()) &&
                     (nextBest.getCurrentX() == nextBest.getCurrentY())) {
-                System.out.println("WE DID IT1");
+                //System.out.println("WE DID IT1");
                 return makePath(nextBest);
             }
 
-            System.out.println("\n" + "ENEMY NODE: " + nextBest.getCurrentX() + " " + nextBest.getCurrentY());
-            System.out.println(nextBest.getfScore());
+            //System.out.println("\n" + "ENEMY NODE: " + nextBest.getCurrentX() + " " + nextBest.getCurrentY());
+            //System.out.println(nextBest.getfScore());
 
             //expand this next best step's neighbours into an array of nodes
             Array<Node> neighbours = expand(nextBest);
@@ -303,7 +303,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                     int tempGScore = nextBest.getgScore() + 1;
                     neighbours.get(i).setfScore(neighbours.get(i).getgScore() +
                             heuristic(neighbours.get(i), goal));
-                    System.out.print(neighbours.get(i).getfScore() + " ");
+                    //System.out.print(neighbours.get(i).getfScore() + " ");
 
                     if(!open.contains(neighbours.get(i))) {
                         open.add(neighbours.get(i));
@@ -318,7 +318,7 @@ public class GameplayScreen implements Screen, InputProcessor {
 
                     if ((neighbours.get(i).getCurrentX() == goal.getCurrentX()) &&
                             (neighbours.get(i).getCurrentY() == goal.getCurrentY())) {
-                        System.out.println("\n"+ "WE DID IT2");
+                        //System.out.println("\n"+ "WE DID IT2");
                         return makePath(neighbours.get(i));
                     }
                 }
@@ -377,7 +377,7 @@ public class GameplayScreen implements Screen, InputProcessor {
     Description: creates a path from input start node to the goal node
     Function: makePath
     Inputs: node : Node
-    Outputs: Node[]
+    Outputs: Array<Node>
      */
     public Array<Node> makePath(Node node) {
         Array<Node> path = new Array<Node>();
@@ -488,15 +488,11 @@ public class GameplayScreen implements Screen, InputProcessor {
                         if(worldTouch.x == enemies.get(i).x &&
                                 worldTouch.y == enemies.get(i).y) {
                             damage = playerChar.ATK - enemies.get(i).DEF;
-                            //System.out.println(damage);
-                            if(enemies.get(i).HP > 0) {
-                                enemies.get(i).HP = enemies.get(i).HP - damage;
-                            }
-                            if(enemies.get(i).HP <= 0) {
-                                enemies.get(i).die();
+                            result = enemies.get(i).takeDamage(damage);
+                            if(result == FLOOR) {
                                 newMap[enemies.get(i).x][enemies.get(i).y] = FLOOR;
+                                enemies.removeIndex(i);
                             }
-                            System.out.println(enemies.get(i).HP);
                         }
                     }
                 }
@@ -506,45 +502,45 @@ public class GameplayScreen implements Screen, InputProcessor {
                     playerChar.y = (int) worldTouch.y;
                     newMap[playerChar.x][playerChar.y] = PLAYER;
                     camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
+                }
+                //initialize a goal node for pathfinding (player character)
+                Node goalNode = new Node();
+                goalNode.setCurrentX(playerChar.getX());
+                goalNode.setCurrentY(playerChar.getY());
 
-                    //initialize a goal node for pathfinding (player character)
-                    Node goalNode = new Node();
-                    goalNode.setCurrentX(playerChar.getX());
-                    goalNode.setCurrentY(playerChar.getY());
-
-                    //enemies move towards the player one step at a time too
-                    for(int i = 0; i < enemies.size; i++) {
-                        if(enemies.size <= 0) {
-                            break;
-                        }
-
-                        //initialize a start node for pathfinding (enemies)
-                        Node startNode = new Node();
-                        startNode.setCurrentX(enemies.get(i).getX());
-                        startNode.setCurrentY(enemies.get(i).getY());
-/*
-                        System.out.println("\n" + "Enemy node: " + startNode.getCurrentX() + " " + startNode.getCurrentY());
-                        Array<Node> expandedArray = expand(startNode);
-                        for(int j = 0; j < expandedArray.size; j++) {
-                            System.out.print(expandedArray.get(j).currentX + " " + expandedArray.get(j).getCurrentY() + " ");
-                            System.out.println(heuristic(expandedArray.get(j), goalNode));
-                        }
-                        */
-
-                        Array<Node> path = aStarPathFinding(startNode, goalNode);
-                        System.out.println(path.size);
-
-                        if(path.size == 1) {
-                            System.out.println("HI");
-                            continue;
-                        }
-
-                        //move the enemy units one tile closer to the player
-                        newMap[enemies.get(i).x][enemies.get(i).y] = FLOOR;
-                        enemies.get(i).x = path.get(1).getCurrentX();
-                        enemies.get(i).y = path.get(1).getCurrentY();
-                        newMap[enemies.get(i).x][enemies.get(i).y] = ENEMY;
+                //enemies move towards the player one step at a time too
+                for(int i = 0; i < enemies.size; i++) {
+                    if (enemies.size <= 0) {
+                        break;
                     }
+
+                    //initialize a start node for pathfinding (enemies)
+                    Node startNode = new Node();
+                    startNode.setCurrentX(enemies.get(i).getX());
+                    startNode.setCurrentY(enemies.get(i).getY());
+
+                    //create the path from the enemy to the player
+                    //and if the enemy is beside the player or the path is null
+                    //then move onto the next enemy in the array
+                    Array<Node> path = aStarPathFinding(startNode, goalNode);
+                    if (path == null) {
+                        continue;
+                    }
+                    if (path.size == 1) {
+                        damage = enemies.get(i).ATK - playerChar.DEF;
+                        result = playerChar.takeDamage(damage);
+                        if (result == FLOOR) {
+                            newMap[playerChar.getX()][playerChar.getY()] = FLOOR;
+                            playerChar.die();
+                        }
+                        continue;
+                    }
+
+                    //move the enemy units one tile closer to the player
+                    newMap[enemies.get(i).x][enemies.get(i).y] = FLOOR;
+                    enemies.get(i).x = path.get(1).getCurrentX();
+                    enemies.get(i).y = path.get(1).getCurrentY();
+                    newMap[enemies.get(i).x][enemies.get(i).y] = ENEMY;
                 }
             }
         }

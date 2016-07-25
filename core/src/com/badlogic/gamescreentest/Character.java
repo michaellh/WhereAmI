@@ -7,6 +7,7 @@ public class Character {
     int x;
     int y;
 
+    int STATUS;
     int HP;
     int ATK;
     int DEF;
@@ -19,6 +20,8 @@ public class Character {
     public int getY() {
         return y;
     }
+
+    public int takeDamage(int dmg) {return STATUS;}
 
     public void die() {}
 }

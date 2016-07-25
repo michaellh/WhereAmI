@@ -19,17 +19,16 @@ public class standardEnemy extends Character implements EnemyCharacter {
     public void move() {
 
     }
-/*
-    public void behaviour(Array<Node> path) {
-        for(int i = 0; i < path.size; i++) {
-            this.x = path.get(i).x;
-            this.y = path.get(i).y;
-        }
-    }
-*/
+
     @Override
-    public void collision() {
+    public int takeDamage(int dmg) {
         System.out.println("Touched my body!!!");
+        System.out.println(this.HP);
+        this.HP = this.HP - dmg;
+        if(this.HP <= 0) {
+            return 0;
+        }
+        return 3;
     }
 
     @Override

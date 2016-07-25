@@ -5,5 +5,4 @@ package com.badlogic.gamescreentest;
  */
 public interface EnemyCharacter {
     public void move();
-    public void collision();
 }
