@@ -36,6 +36,8 @@ public class GameplayScreen implements Screen, InputProcessor {
     int[][] ogMap, newMap;
     ArrayList<Node> closed;
     PriorityQueue<Node> open;
+    Node startNode, goalNode;
+    Array<Node> path;
 
     float screenWidth, screenHeight, cellWidth, cellHeight;
     int tiledMapWidth, tiledMapHeight;
@@ -79,7 +81,7 @@ public class GameplayScreen implements Screen, InputProcessor {
 
         //set up the Game, SpriteBatch, and OrthographicCamera
         this.game = gam;
-        camera = new OrthographicCamera(15 * TEXTURESIZE, 10 * TEXTURESIZE);
+        camera = new OrthographicCamera(14 * TEXTURESIZE, 10 * TEXTURESIZE);
         //camera = new OrthographicCamera(screenWidth, screenHeight);
 
         //get, after loading, the assets
@@ -397,8 +399,9 @@ public class GameplayScreen implements Screen, InputProcessor {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         game.batch.begin();
-        for(int i = 0; i < tiledMapWidth; i++) {
-            for (int j = 0; j < tiledMapHeight; j++) {
+        for(int i = (playerChar.getX() - 8); i < (playerChar.getX() + 9); i++) {
+            for (int j = (playerChar.getY() - 5); j < (playerChar.getY() + 6); j++) {
+                if(i < 0 || i >= tiledMapWidth || j < 0 || j >= tiledMapHeight) {continue;}
                 if (newMap[i][j] == WALL) {
                     game.batch.draw(happyFace, i * TEXTURESIZE, j * TEXTURESIZE,
                             TEXTURESIZE, TEXTURESIZE);
@@ -454,7 +457,6 @@ public class GameplayScreen implements Screen, InputProcessor {
     @Override
     public void dispose() {
         assetManager.dispose();
-        //stage.dispose();
         this.dispose();
     }
 
@@ -472,6 +474,8 @@ public class GameplayScreen implements Screen, InputProcessor {
 
     @Override
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+        goalNode = new Node();
+        startNode = new Node();
         worldTouch = new Vector3((int) worldTouch.x / TEXTURESIZE,
                 (int) worldTouch.y / TEXTURESIZE, 0);
         //if within the bounds of the world
@@ -504,7 +508,6 @@ public class GameplayScreen implements Screen, InputProcessor {
                     camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
                 }
                 //initialize a goal node for pathfinding (player character)
-                Node goalNode = new Node();
                 goalNode.setCurrentX(playerChar.getX());
                 goalNode.setCurrentY(playerChar.getY());
 
@@ -515,15 +518,14 @@ public class GameplayScreen implements Screen, InputProcessor {
                     }
 
                     //initialize a start node for pathfinding (enemies)
-                    Node startNode = new Node();
                     startNode.setCurrentX(enemies.get(i).getX());
                     startNode.setCurrentY(enemies.get(i).getY());
 
                     //create the path from the enemy to the player
                     //and if the enemy is beside the player or the path is null
                     //then move onto the next enemy in the array
-                    Array<Node> path = aStarPathFinding(startNode, goalNode);
-                    if (path == null) {
+                    path = aStarPathFinding(startNode, goalNode);
+                    if (path == null || path.size == 0) {
                         continue;
                     }
                     if (path.size == 1) {
@@ -535,12 +537,12 @@ public class GameplayScreen implements Screen, InputProcessor {
                         }
                         continue;
                     }
-
                     //move the enemy units one tile closer to the player
                     newMap[enemies.get(i).x][enemies.get(i).y] = FLOOR;
                     enemies.get(i).x = path.get(1).getCurrentX();
                     enemies.get(i).y = path.get(1).getCurrentY();
                     newMap[enemies.get(i).x][enemies.get(i).y] = ENEMY;
+                    path = null;
                 }
             }
         }
