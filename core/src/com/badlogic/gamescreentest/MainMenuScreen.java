@@ -22,9 +22,9 @@ public class MainMenuScreen implements Screen, InputProcessor {
     AssetManager assetManager;
 
     private MainMenuBackGround backGround;
-    private MainMenuCont contButton;
-    private MainMenuQuit quitButton;
-    private MainMenuNewGame newGameButton;
+    private com.badlogic.gamescreentest.menuButtons.MainMenuCont contButton;
+    private com.badlogic.gamescreentest.menuButtons.MainMenuQuit quitButton;
+    private com.badlogic.gamescreentest.menuButtons.MainMenuNewGame newGameButton;
 
     boolean assetsLoaded;
     Vector2 storeTouch;
@@ -47,11 +47,13 @@ public class MainMenuScreen implements Screen, InputProcessor {
         assetManager.load("neutralface.jpg", Texture.class);
         assetManager.load("badlogic.jpg", Texture.class);
         assetManager.load("ugly face sean.jpg", Texture.class);
+        assetManager.load("OBJECTION.jpg", Texture.class);
+        assetManager.load("cool hummingbird.jpg", Texture.class);
 
         backGround = new MainMenuBackGround(cellWidth, cellHeight);
-        contButton = new MainMenuCont(cellWidth, cellHeight);
-        quitButton = new MainMenuQuit(cellWidth, cellHeight);
-        newGameButton = new MainMenuNewGame(cellWidth, cellHeight);
+        contButton = new com.badlogic.gamescreentest.menuButtons.MainMenuCont(cellWidth, cellHeight);
+        quitButton = new com.badlogic.gamescreentest.menuButtons.MainMenuQuit(cellWidth, cellHeight);
+        newGameButton = new com.badlogic.gamescreentest.menuButtons.MainMenuNewGame(cellWidth, cellHeight);
         stage.addActor(backGround);
         stage.addActor(contButton);
         stage.addActor(quitButton);
