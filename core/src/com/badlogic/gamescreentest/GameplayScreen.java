@@ -1,5 +1,7 @@
 package com.badlogic.gamescreentest;
 
+import com.badlogic.gamescreentest.headsUP.Inventory;
+import com.badlogic.gamescreentest.headsUP.MapHUD;
 import com.badlogic.gamescreentest.headsUP.gameOptions;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
@@ -30,10 +32,12 @@ public class GameplayScreen implements Screen, InputProcessor {
     OrthographicCamera camera;
     Stage stage;
     AssetManager assetManager;
-    Texture happyFace, neutralFace, sadFace, badLogic, uglySean, humBird, objection;
+    Texture happyFace, neutralFace, sadFace, badLogic, uglySean, humBird, objection, chinPo;
     Random rand;
 
+    Inventory invButton;
     gameOptions optButton;
+    MapHUD mapButton;
     PlayerCharacter playerChar;
     Array<standardEnemy> enemies;
 
@@ -59,8 +63,8 @@ public class GameplayScreen implements Screen, InputProcessor {
     public GameplayScreen(final GameScreen gam) {
         screenWidth = Gdx.graphics.getWidth();
         screenHeight = Gdx.graphics.getHeight();
-        cellWidth = screenWidth / 5;
-        cellHeight = screenHeight / 4;
+        cellWidth = screenWidth / 10;
+        cellHeight = screenHeight / 8;
 
         TEXTURESIZE = 32;
         FLOOR = 0;
@@ -74,7 +78,7 @@ public class GameplayScreen implements Screen, InputProcessor {
         enemyNum = randInt(5, 10);
 
         //initialize the player character's stats
-        playerChar = new PlayerCharacter(randInt(10, 15), randInt(1, 2),
+        playerChar = new PlayerCharacter(randInt(10, 15), 5,
                 0, randInt(0, 10));
         //initialize a random-sized array of standard enemies and their stats
         enemies = new Array<standardEnemy>();
@@ -87,7 +91,6 @@ public class GameplayScreen implements Screen, InputProcessor {
         this.game = gam;
         camera = new OrthographicCamera(14 * TEXTURESIZE, 10 * TEXTURESIZE);
         stage = new Stage(new ScreenViewport(), game.batch);
-        //camera = new OrthographicCamera(screenWidth, screenHeight);
 
         //get, after loading, the assets
         assetManager = game.assetManager;
@@ -98,6 +101,7 @@ public class GameplayScreen implements Screen, InputProcessor {
         badLogic = assetManager.get("badlogic.jpg", Texture.class);
         humBird = assetManager.get("cool hummingbird.jpg", Texture.class);
         objection = assetManager.get("OBJECTION.jpg", Texture.class);
+        chinPo = assetManager.get("Chin_po.jpg", Texture.class);
 
         //create the game world
         newMap = createWorld();
@@ -111,7 +115,6 @@ public class GameplayScreen implements Screen, InputProcessor {
         playerChar.y = ranPosY;
         newMap[playerChar.x][playerChar.y] = PLAYER;
         camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
-        //camera.position.set(camera.viewportWidth/2f, camera.viewportHeight/2f, 0);
         camera.update();
 
         for(int i = 0; i < enemies.size; i++) {
@@ -124,8 +127,37 @@ public class GameplayScreen implements Screen, InputProcessor {
             newMap[enemies.get(i).x][enemies.get(i).y] = ENEMY;
         }
 
+        //initialize the HUD buttons and add them to the stage as actors
+        mapButton = new MapHUD(chinPo, cellWidth, cellHeight);
+        mapButton.setBounds(cellWidth * 7, cellHeight * 7, chinPo.getWidth(), chinPo.getHeight());
+        mapButton.addListener(new InputListener() {
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                System.out.println("map touched down");
+                return true;
+            }
+
+            @Override
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                System.out.println("map touched up");
+            }
+        });
+        invButton = new Inventory(humBird, cellWidth, cellHeight);
+        invButton.setBounds(cellWidth * 8, cellHeight * 7, humBird.getWidth(), humBird.getHeight());
+        invButton.addListener(new InputListener() {
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                System.out.println("inventory touched down");
+                return true;
+            }
+
+            @Override
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                System.out.println("inventory touched up");
+            }
+        });
         optButton = new gameOptions(objection, cellWidth, cellHeight);
-        optButton.setBounds(cellWidth * 4, cellHeight * 3, objection.getWidth(), objection.getHeight());
+        optButton.setBounds(cellWidth * 9, cellHeight * 7, objection.getWidth(), objection.getHeight());
         optButton.addListener(new InputListener() {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
@@ -138,9 +170,11 @@ public class GameplayScreen implements Screen, InputProcessor {
                 System.out.println("options touched up");
             }
         });
+        stage.addActor(mapButton);
+        stage.addActor(invButton);
         stage.addActor(optButton);
 
-        System.out.println("ENEMIES REMAINING: " + enemies.size);
+        //give priority touch to the stage actors
         InputMultiplexer im = new InputMultiplexer(stage, this);
         Gdx.input.setInputProcessor(im);
     }
@@ -291,7 +325,6 @@ public class GameplayScreen implements Screen, InputProcessor {
         //return the path
         if((start.getCurrentX() == goal.getCurrentX()) &&
                 (start.getCurrentY() == goal.getCurrentY())) {
-            //System.out.println("WE DID IT");
             return makePath(start);
         }
 
@@ -308,28 +341,20 @@ public class GameplayScreen implements Screen, InputProcessor {
 
             //if nextBest is the goal then return with its path
             if ((nextBest.getCurrentX() == goal.getCurrentX()) &&
-                    (nextBest.getCurrentX() == nextBest.getCurrentY())) {
-                //System.out.println("WE DID IT1");
+                    (nextBest.getCurrentY() == goal.getCurrentY())) {
                 return makePath(nextBest);
             }
 
-            //System.out.println("\n" + "ENEMY NODE: " + nextBest.getCurrentX() + " " + nextBest.getCurrentY());
-            //System.out.println(nextBest.getfScore());
-
             //expand this next best step's neighbours into an array of nodes
             Array<Node> neighbours = expand(nextBest);
-            //System.out.println("NUMBER OF NEIGHBOURS: " + neighbours.size);
 
             for (int i = 0; i < neighbours.size; i++) {
-                //System.out.println(neighbours.get(i).getCurrentX() + " " + neighbours.get(i).getCurrentY());
-
                 //if the node isn't in closed then set its parent to the
                 //next best node and then add the node to the open list
                 if(!closed.contains(neighbours.get(i))) {
                     int tempGScore = nextBest.getgScore() + 1;
                     neighbours.get(i).setfScore(neighbours.get(i).getgScore() +
                             heuristic(neighbours.get(i), goal));
-                    //System.out.print(neighbours.get(i).getfScore() + " ");
 
                     if(!open.contains(neighbours.get(i))) {
                         open.add(neighbours.get(i));
@@ -343,8 +368,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                     neighbours.get(i).setgScore(tempGScore);
 
                     if ((neighbours.get(i).getCurrentX() == goal.getCurrentX()) &&
-                            (neighbours.get(i).getCurrentY() == goal.getCurrentY())) {
-                        //System.out.println("\n"+ "WE DID IT2");
+                            neighbours.get(i).getCurrentY() == goal.getCurrentY()) {
                         return makePath(neighbours.get(i));
                     }
                 }
@@ -407,8 +431,8 @@ public class GameplayScreen implements Screen, InputProcessor {
      */
     public Array<Node> makePath(Node node) {
         Array<Node> path = new Array<Node>();
-        while (node.parent != null) {
-            node = node.parent;
+        while (node.getParent() != null) {
+            node = node.getParent();
             path.add(node);
         }
         path.reverse();
@@ -418,6 +442,7 @@ public class GameplayScreen implements Screen, InputProcessor {
     @Override
     public void render(float delta) {
         camera.update();
+        stage.getCamera().update();
         stage.getBatch().setProjectionMatrix(camera.combined);
 
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -515,14 +540,13 @@ public class GameplayScreen implements Screen, InputProcessor {
                                     (Math.abs(worldTouch.y - playerChar.y) == 0)))) {
                 if (newMap[(int) worldTouch.x][(int) worldTouch.y] == ENEMY) {
                     for(int i = 0; i < enemies.size; i++) {
-                        if(worldTouch.x == enemies.get(i).x &&
-                                worldTouch.y == enemies.get(i).y) {
+                        if(worldTouch.x == enemies.get(i).getX() &&
+                                worldTouch.y == enemies.get(i).getY()) {
                             damage = playerChar.ATK - enemies.get(i).DEF;
                             result = enemies.get(i).takeDamage(damage);
                             if(result == FLOOR) {
-                                newMap[enemies.get(i).x][enemies.get(i).y] = FLOOR;
+                                newMap[enemies.get(i).getX()][enemies.get(i).getY()] = FLOOR;
                                 enemies.removeIndex(i);
-                                System.out.println("ENEMIES REMAINING: " + enemies.size);
                             }
                         }
                     }

@@ -3,24 +3,22 @@ package com.badlogic.gamescreentest.headsUP;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Actor;
-import com.badlogic.gdx.scenes.scene2d.EventListener;
-import com.badlogic.gdx.scenes.scene2d.Touchable;
 
 /**
- * Created by admin on 7/27/2016.
+ * Created by admin on 7/28/2016.
  */
-public class gameOptions extends Actor {
+public class Inventory extends Actor {
     Texture img;
     float x;
     float y;
     float width;
     float height;
 
-    public gameOptions(Texture texture, float cellWidth, float cellHeight) {
+    public Inventory(Texture texture, float cellWidth, float cellHeight) {
         img = texture;
         width = cellWidth;
         height = cellHeight;
-        x = width * 9;
+        x = width * 8;
         y = height * 7;
     }
 
@@ -34,3 +32,4 @@ public class gameOptions extends Actor {
         return super.getX();
     }
 }
+
