@@ -14,7 +14,7 @@ public class PlayerCharacter extends Character {
     @Override
     public int takeDamage(int dmg) {
         System.out.println("I'VE BEEN HIT!" + " " +"REMAINING HP: " + this.HP);
-        this.HP = this.HP - dmg;
+        this.HP = (this.HP + this.DEF) - dmg;
         if(this.HP <= 0) {
             return 0;
         }

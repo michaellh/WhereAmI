@@ -50,6 +50,9 @@ public class MainMenuScreen implements Screen, InputProcessor {
         assetManager.load("OBJECTION.jpg", Texture.class);
         assetManager.load("cool hummingbird.jpg", Texture.class);
         assetManager.load("Chin_po.jpg", Texture.class);
+        assetManager.load("ugly face sean 2.png", Texture.class);
+        assetManager.load("man.png", Texture.class);
+        assetManager.load("1pman.jpg", Texture.class);
 
         backGround = new MainMenuBackGround(cellWidth, cellHeight);
         contButton = new com.badlogic.gamescreentest.menuButtons.MainMenuCont(cellWidth, cellHeight);

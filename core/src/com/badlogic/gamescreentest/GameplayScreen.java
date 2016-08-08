@@ -1,6 +1,6 @@
 package com.badlogic.gamescreentest;
 
-import com.badlogic.gamescreentest.headsUP.Inventory;
+import com.badlogic.gamescreentest.headsUP.Map.MapExit;
 import com.badlogic.gamescreentest.headsUP.MapHUD;
 import com.badlogic.gamescreentest.headsUP.gameOptions;
 import com.badlogic.gdx.Gdx;
@@ -11,11 +11,15 @@ import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.utils.SpriteDrawable;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
@@ -32,12 +36,16 @@ public class GameplayScreen implements Screen, InputProcessor {
     OrthographicCamera camera;
     Stage stage;
     AssetManager assetManager;
-    Texture happyFace, neutralFace, sadFace, badLogic, uglySean, humBird, objection, chinPo;
+    Texture happyFace, neutralFace, sadFace, badLogic, uglySean, humBird, objection, chinPo, uglySean2, opm, man;
     Random rand;
 
-    Inventory invButton;
+    Skin skin;
+    TextButton textButton;
     gameOptions optButton;
     MapHUD mapButton;
+    MapExit mapExit;
+    HPBarStyle hpBarStyle;
+    PlayerHPBar playerHPBar;
     PlayerCharacter playerChar;
     Array<standardEnemy> enemies;
 
@@ -49,15 +57,17 @@ public class GameplayScreen implements Screen, InputProcessor {
 
     float screenWidth, screenHeight, cellWidth, cellHeight;
     int tiledMapWidth, tiledMapHeight;
-    int FLOOR, WALL, PLAYER, ENEMY;
+    int FLOOR, WALL, PLAYER, ENEMY, EXIT;
     int TEXTURESIZE;
     int enemyNum, wallCount;
 
+    boolean options;
+    boolean mapPressed;
     int ranPosX, ranPosY, startPosX, startPosY, endPosX, endPosY;
     int damage;
     int result;
 
-    Vector2 userTouch;
+    Vector2 userTouch, dragOld, dragNew;
     Vector3 worldTouch;
 
     public GameplayScreen(final GameScreen gam) {
@@ -65,12 +75,15 @@ public class GameplayScreen implements Screen, InputProcessor {
         screenHeight = Gdx.graphics.getHeight();
         cellWidth = screenWidth / 10;
         cellHeight = screenHeight / 8;
+        options = false;
+        mapPressed = false;
 
         TEXTURESIZE = 32;
         FLOOR = 0;
         WALL = 1;
         PLAYER = 2;
         ENEMY = 3;
+        EXIT = 4;
 
         rand = new Random();
         tiledMapWidth = randInt(50, 100);
@@ -83,7 +96,7 @@ public class GameplayScreen implements Screen, InputProcessor {
         //initialize a random-sized array of standard enemies and their stats
         enemies = new Array<standardEnemy>();
         for(int i = 0; i < randInt(5, 10); i++) {
-            enemies.add(new standardEnemy(randInt(10, 15), randInt(1, 2),
+            enemies.add(new standardEnemy(randInt(10, 15), 1,
                     0, randInt(0, 10)));
         }
 
@@ -102,6 +115,9 @@ public class GameplayScreen implements Screen, InputProcessor {
         humBird = assetManager.get("cool hummingbird.jpg", Texture.class);
         objection = assetManager.get("OBJECTION.jpg", Texture.class);
         chinPo = assetManager.get("Chin_po.jpg", Texture.class);
+        uglySean2 = assetManager.get("ugly face sean 2.png", Texture.class);
+        opm = assetManager.get("1pman.jpg", Texture.class);
+        man = assetManager.get("man.png", Texture.class);
 
         //create the game world
         newMap = createWorld();
@@ -127,9 +143,29 @@ public class GameplayScreen implements Screen, InputProcessor {
             newMap[enemies.get(i).x][enemies.get(i).y] = ENEMY;
         }
 
+        while(newMap[ranPosX][ranPosY] != FLOOR) {
+            ranPosX = randInt(1, (tiledMapWidth - 1));
+            ranPosY = randInt(1, (tiledMapHeight - 1));
+        }
+        newMap[ranPosX][ranPosY] = EXIT;
+        System.out.println(ranPosX + " " + ranPosY);
+
         //initialize the HUD buttons and add them to the stage as actors
+        Sprite spriteBack = new Sprite(opm);
+        spriteBack.setSize(cellWidth * 3, (cellHeight / 2));
+        final SpriteDrawable spriteDrawableBack = new SpriteDrawable(spriteBack);
+        Sprite spriteKnob = new Sprite(man);
+        spriteKnob.setSize(0, spriteBack.getHeight());
+        SpriteDrawable spriteDrawableKnob = new SpriteDrawable(spriteKnob);
+        hpBarStyle = new HPBarStyle(spriteDrawableBack, spriteDrawableKnob);
+        hpBarStyle.knobBefore = hpBarStyle.knob;
+        playerHPBar = new PlayerHPBar(0, playerChar.HP, 1, false, hpBarStyle);
+        playerHPBar.setSize(spriteBack.getWidth(), spriteBack.getHeight());
+        playerHPBar.setPosition(0, 7 * cellHeight + spriteBack.getHeight());
+        playerHPBar.setValue(playerChar.HP);
+
         mapButton = new MapHUD(chinPo, cellWidth, cellHeight);
-        mapButton.setBounds(cellWidth * 7, cellHeight * 7, chinPo.getWidth(), chinPo.getHeight());
+        mapButton.setBounds(cellWidth * 8, cellHeight * 7, chinPo.getWidth(), chinPo.getHeight());
         mapButton.addListener(new InputListener() {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
@@ -140,20 +176,32 @@ public class GameplayScreen implements Screen, InputProcessor {
             @Override
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                 System.out.println("map touched up");
-            }
-        });
-        invButton = new Inventory(humBird, cellWidth, cellHeight);
-        invButton.setBounds(cellWidth * 8, cellHeight * 7, humBird.getWidth(), humBird.getHeight());
-        invButton.addListener(new InputListener() {
-            @Override
-            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                System.out.println("inventory touched down");
-                return true;
-            }
+                for(int i = 0; i < stage.getActors().size; i++) {
+                    stage.getActors().get(i).setVisible(false);
+                }
+                camera.setToOrtho(false, screenWidth, screenHeight);
+                camera.position.set(screenWidth, screenHeight, 0);
+                mapPressed = true;
+                mapExit = new MapExit(objection, cellWidth, cellHeight);
+                mapExit.setBounds(cellWidth * 9, cellHeight * 7, objection.getWidth(), objection.getHeight());
+                stage.addActor(mapExit);
+                mapExit.addListener(new InputListener() {
+                    @Override
+                    public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                        return true;
+                    }
 
-            @Override
-            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
-                System.out.println("inventory touched up");
+                    @Override
+                    public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                        mapPressed = false;
+                        camera.setToOrtho(false, 14 * TEXTURESIZE, 10 * TEXTURESIZE);
+                        camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
+                        for(int i = 0; i < stage.getActors().size; i++) {
+                            stage.getActors().get(i).setVisible(true);
+                        }
+                        stage.getActors().get(stage.getActors().size - 1).setVisible(false);
+                    }
+                });
             }
         });
         optButton = new gameOptions(objection, cellWidth, cellHeight);
@@ -168,11 +216,24 @@ public class GameplayScreen implements Screen, InputProcessor {
             @Override
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                 System.out.println("options touched up");
+                options = true;
             }
         });
+
+        /*
+        skin = new Skin(Gdx.files.local("uiskin.json"));
+        textButton = new TextButton("Resume", skin, "default");
+        textButton.setWidth(cellWidth * 2);
+        textButton.setHeight(cellHeight);
+        Table table = new Table(skin);
+        table.setBackground(spriteDrawableBack);
+        table.addActor(textButton);
+        stage.addActor(table);
+        //stage.getActors().;*/
+
         stage.addActor(mapButton);
-        stage.addActor(invButton);
         stage.addActor(optButton);
+        stage.addActor(playerHPBar);
 
         //give priority touch to the stage actors
         InputMultiplexer im = new InputMultiplexer(stage, this);
@@ -448,30 +509,68 @@ public class GameplayScreen implements Screen, InputProcessor {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         stage.getBatch().begin();
-        for(int i = (playerChar.getX() - 8); i < (playerChar.getX() + 9); i++) {
-            for (int j = (playerChar.getY() - 5); j < (playerChar.getY() + 6); j++) {
-                if(i < 0 || i >= tiledMapWidth || j < 0 || j >= tiledMapHeight) {continue;}
-                if (newMap[i][j] == WALL) {
-                    stage.getBatch().draw(happyFace, i * TEXTURESIZE, j * TEXTURESIZE,
-                            TEXTURESIZE, TEXTURESIZE);
-                }
-                else if (newMap[i][j] == PLAYER) {
-                    stage.getBatch().draw(sadFace, playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE,
-                            TEXTURESIZE, TEXTURESIZE);
-                }
-                else if (newMap[i][j] == ENEMY) {
-                    stage.getBatch().draw(neutralFace, i * TEXTURESIZE, j * TEXTURESIZE,
-                            TEXTURESIZE, TEXTURESIZE);
-                }
-                else {
-                    stage.getBatch().draw(badLogic, i * TEXTURESIZE, j * TEXTURESIZE,
-                            TEXTURESIZE, TEXTURESIZE);
+        if(mapPressed) {
+            for(int i = 0; i < (screenWidth - 1); i++) {
+                for (int j = 0; j < (screenHeight - 1); j++) {
+                    if(i < 0 || i >= tiledMapWidth || j < 0 || j >= tiledMapHeight) {continue;}
+                    if (newMap[i][j] == WALL) {
+                        stage.getBatch().draw(happyFace, i * TEXTURESIZE, j * TEXTURESIZE,
+                                TEXTURESIZE, TEXTURESIZE);
+                    }
+                    else if (newMap[i][j] == PLAYER) {
+                        stage.getBatch().draw(sadFace, playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE,
+                                TEXTURESIZE, TEXTURESIZE);
+                    }
+                    else if (newMap[i][j] == ENEMY) {
+                        stage.getBatch().draw(neutralFace, i * TEXTURESIZE, j * TEXTURESIZE,
+                                TEXTURESIZE, TEXTURESIZE);
+                    }
+                    else if (newMap[i][j] == EXIT) {
+                        stage.getBatch().draw(uglySean2, i * TEXTURESIZE, j * TEXTURESIZE,
+                                TEXTURESIZE, TEXTURESIZE);
+                    }
+                    else {
+                        stage.getBatch().draw(badLogic, i * TEXTURESIZE, j * TEXTURESIZE,
+                                TEXTURESIZE, TEXTURESIZE);
+                    }
                 }
             }
         }
+        else {
+            for (int i = (playerChar.getX() - 8); i < (playerChar.getX() + 9); i++) {
+                for (int j = (playerChar.getY() - 5); j < (playerChar.getY() + 6); j++) {
+                    if (i < 0 || i >= tiledMapWidth || j < 0 || j >= tiledMapHeight) {
+                        continue;
+                    }
+                    if (newMap[i][j] == WALL) {
+                        stage.getBatch().draw(happyFace, i * TEXTURESIZE, j * TEXTURESIZE,
+                                TEXTURESIZE, TEXTURESIZE);
+                    } else if (newMap[i][j] == PLAYER) {
+                        stage.getBatch().draw(sadFace, playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE,
+                                TEXTURESIZE, TEXTURESIZE);
+                    } else if (newMap[i][j] == ENEMY) {
+                        stage.getBatch().draw(neutralFace, i * TEXTURESIZE, j * TEXTURESIZE,
+                                TEXTURESIZE, TEXTURESIZE);
+                    } else if (newMap[i][j] == EXIT) {
+                        stage.getBatch().draw(uglySean2, i * TEXTURESIZE, j * TEXTURESIZE,
+                                TEXTURESIZE, TEXTURESIZE);
+                    } else {
+                        stage.getBatch().draw(badLogic, i * TEXTURESIZE, j * TEXTURESIZE,
+                                TEXTURESIZE, TEXTURESIZE);
+                    }
+                }
+            }
+        }
+        //checkOptions();
         stage.getBatch().end();
         stage.act(delta);
         stage.draw();
+    }
+
+    public void checkOptions() {
+        if(options == true){
+            stage.getActors().first().setVisible(true);
+        }
     }
 
     /*
@@ -520,12 +619,16 @@ public class GameplayScreen implements Screen, InputProcessor {
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
         userTouch = new Vector2(Gdx.input.getX(), Gdx.input.getY());
+        dragOld = userTouch;
         worldTouch = camera.unproject(new Vector3(userTouch, 0));
         return true;
     }
 
     @Override
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+        if(mapPressed) {
+            return false;
+        }
         worldTouch = new Vector3((int) worldTouch.x / TEXTURESIZE,
                 (int) worldTouch.y / TEXTURESIZE, 0);
 
@@ -550,6 +653,11 @@ public class GameplayScreen implements Screen, InputProcessor {
                             }
                         }
                     }
+                }
+                else if (newMap[(int) worldTouch.x][(int) worldTouch.y] == EXIT) {
+                    System.out.println("YOU WIN!");
+                    System.out.println("\n" + "Touch: " + worldTouch.x + " " + worldTouch.y);
+                    return true;
                 }
                 else if (newMap[(int) worldTouch.x][(int) worldTouch.y] == FLOOR) {
                     newMap[playerChar.x][playerChar.y] = FLOOR;
@@ -583,6 +691,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                     }
                     if (path.size == 1) {
                         damage = enemies.get(i).ATK - playerChar.DEF;
+                        playerHPBar.setValue(playerChar.HP - damage);
                         result = playerChar.takeDamage(damage);
                         if (result == FLOOR) {
                             newMap[playerChar.getX()][playerChar.getY()] = FLOOR;
@@ -605,7 +714,17 @@ public class GameplayScreen implements Screen, InputProcessor {
 
     @Override
     public boolean touchDragged(int screenX, int screenY, int pointer) {
-        return false;
+        if(!mapPressed) {
+            return false;
+        }
+        else{
+            dragNew = new Vector2(Gdx.input.getX(), Gdx.input.getY());
+            if(!dragNew.equals(dragOld)) {
+                camera.translate(dragOld.x - dragNew.x, dragNew.y - dragOld.y);
+                dragOld = dragNew;
+            }
+        }
+        return true;
     }
 
     @Override

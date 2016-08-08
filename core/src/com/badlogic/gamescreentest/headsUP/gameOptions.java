@@ -28,9 +28,4 @@ public class gameOptions extends Actor {
     public void draw(Batch batch, float parentAlpha) {
         batch.draw(img, x, y, width, height);
     }
-
-    @Override
-    public float getX() {
-        return super.getX();
-    }
 }

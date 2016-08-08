@@ -18,17 +18,12 @@ public class MapHUD extends Actor {
         img = texture;
         width = cellWidth;
         height = cellHeight;
-        x = width * 7;
+        x = width * 8;
         y = height * 7;
     }
 
     @Override
     public void draw(Batch batch, float parentAlpha) {
         batch.draw(img, x, y, width, height);
-    }
-
-    @Override
-    public float getX() {
-        return super.getX();
     }
 }
