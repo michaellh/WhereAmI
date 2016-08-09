@@ -1,6 +1,7 @@
 package com.badlogic.gamescreentest;
 
 import com.badlogic.gamescreentest.headsUP.Map.MapExit;
+import com.badlogic.gamescreentest.headsUP.Map.MapSeePlayer;
 import com.badlogic.gamescreentest.headsUP.MapHUD;
 import com.badlogic.gamescreentest.headsUP.gameOptions;
 import com.badlogic.gdx.Gdx;
@@ -44,6 +45,7 @@ public class GameplayScreen implements Screen, InputProcessor {
     gameOptions optButton;
     MapHUD mapButton;
     MapExit mapExit;
+    MapSeePlayer mapSeePlayer;
     HPBarStyle hpBarStyle;
     PlayerHPBar playerHPBar;
     PlayerCharacter playerChar;
@@ -67,6 +69,7 @@ public class GameplayScreen implements Screen, InputProcessor {
     int damage;
     int result;
 
+    ArrayList<Vector2> mapDiscovered;
     Vector2 userTouch, dragOld, dragNew;
     Vector3 worldTouch;
 
@@ -77,6 +80,7 @@ public class GameplayScreen implements Screen, InputProcessor {
         cellHeight = screenHeight / 8;
         options = false;
         mapPressed = false;
+        mapDiscovered = new ArrayList<Vector2>();
 
         TEXTURESIZE = 32;
         FLOOR = 0;
@@ -130,6 +134,8 @@ public class GameplayScreen implements Screen, InputProcessor {
         playerChar.x = ranPosX;
         playerChar.y = ranPosY;
         newMap[playerChar.x][playerChar.y] = PLAYER;
+        Vector2 playerPos = new Vector2(playerChar.getX(), playerChar.getY());
+        mapDiscovered.add(new Vector2(playerChar.getX(), playerChar.getY()));
         camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
         camera.update();
 
@@ -196,10 +202,29 @@ public class GameplayScreen implements Screen, InputProcessor {
                         mapPressed = false;
                         camera.setToOrtho(false, 14 * TEXTURESIZE, 10 * TEXTURESIZE);
                         camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
-                        for(int i = 0; i < stage.getActors().size; i++) {
-                            stage.getActors().get(i).setVisible(true);
-                        }
-                        stage.getActors().get(stage.getActors().size - 1).setVisible(false);
+                        int mapExitLocation = stage.getActors().indexOf(mapExit, true);
+                        stage.getActors().get(mapExitLocation).setVisible(false);
+                        int mapFindPlayer = stage.getActors().indexOf(mapSeePlayer, true);
+                        stage.getActors().get(mapFindPlayer).setVisible(false);
+
+                        int mapButtonIndex = stage.getActors().indexOf(mapButton, true);
+                        stage.getActors().get(mapButtonIndex).setVisible(true);
+                        int optButtonIndex = stage.getActors().indexOf(optButton, true);
+                        stage.getActors().get(optButtonIndex).setVisible(true);
+                    }
+                });
+                mapSeePlayer = new MapSeePlayer(chinPo, cellWidth, cellHeight);
+                mapSeePlayer.setBounds(cellWidth * 8, cellHeight * 7, chinPo.getWidth(), chinPo.getHeight());
+                stage.addActor(mapSeePlayer);
+                mapSeePlayer.addListener(new InputListener() {
+                    @Override
+                    public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                        return true;
+                    }
+
+                    @Override
+                    public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                        camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
                     }
                 });
             }
@@ -500,6 +525,24 @@ public class GameplayScreen implements Screen, InputProcessor {
         return path;
     }
 
+    public void updateMapDiscovered() {
+        Vector2 mapTileDiscovered;
+        for(int i = (playerChar.getX() - 2); i <= (playerChar.getX() + 2); i++) {
+            for(int j = (playerChar.getY() - 2); j <= (playerChar.getY() + 2); j++) {
+                if((i >= 0 && i <= tiledMapWidth) &&
+                        (j >= 0 && j <= tiledMapHeight)) {
+                    mapTileDiscovered = new Vector2(i, j);
+                    for (int k = 0; k < mapDiscovered.size(); k++) {
+                        if (!mapDiscovered.get(k).equals(mapTileDiscovered)
+                                && (k == (mapDiscovered.size() - 1))) {
+                            mapDiscovered.add(mapTileDiscovered);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     @Override
     public void render(float delta) {
         camera.update();
@@ -510,29 +553,26 @@ public class GameplayScreen implements Screen, InputProcessor {
 
         stage.getBatch().begin();
         if(mapPressed) {
-            for(int i = 0; i < (screenWidth - 1); i++) {
-                for (int j = 0; j < (screenHeight - 1); j++) {
-                    if(i < 0 || i >= tiledMapWidth || j < 0 || j >= tiledMapHeight) {continue;}
-                    if (newMap[i][j] == WALL) {
-                        stage.getBatch().draw(happyFace, i * TEXTURESIZE, j * TEXTURESIZE,
-                                TEXTURESIZE, TEXTURESIZE);
-                    }
-                    else if (newMap[i][j] == PLAYER) {
-                        stage.getBatch().draw(sadFace, playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE,
-                                TEXTURESIZE, TEXTURESIZE);
-                    }
-                    else if (newMap[i][j] == ENEMY) {
-                        stage.getBatch().draw(neutralFace, i * TEXTURESIZE, j * TEXTURESIZE,
-                                TEXTURESIZE, TEXTURESIZE);
-                    }
-                    else if (newMap[i][j] == EXIT) {
-                        stage.getBatch().draw(uglySean2, i * TEXTURESIZE, j * TEXTURESIZE,
-                                TEXTURESIZE, TEXTURESIZE);
-                    }
-                    else {
-                        stage.getBatch().draw(badLogic, i * TEXTURESIZE, j * TEXTURESIZE,
-                                TEXTURESIZE, TEXTURESIZE);
-                    }
+            for(int i = 0; i < mapDiscovered.size(); i++) {
+                if(newMap[(int) mapDiscovered.get(i).x][(int) mapDiscovered.get(i).y] == WALL) {
+                    stage.getBatch().draw(happyFace, mapDiscovered.get(i).x * TEXTURESIZE,
+                            mapDiscovered.get(i).y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
+                }
+                else if (newMap[(int) mapDiscovered.get(i).x][(int) mapDiscovered.get(i).y] == PLAYER) {
+                    stage.getBatch().draw(sadFace, playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE,
+                            TEXTURESIZE, TEXTURESIZE);
+                }
+                else if (newMap[(int) mapDiscovered.get(i).x][(int) mapDiscovered.get(i).y] == ENEMY) {
+                    stage.getBatch().draw(neutralFace, mapDiscovered.get(i).x * TEXTURESIZE,
+                            mapDiscovered.get(i).y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
+                }
+                else if (newMap[(int) mapDiscovered.get(i).x][(int) mapDiscovered.get(i).y] == EXIT) {
+                    stage.getBatch().draw(uglySean2, mapDiscovered.get(i).x * TEXTURESIZE,
+                            mapDiscovered.get(i).y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
+                }
+                else {
+                    stage.getBatch().draw(badLogic, mapDiscovered.get(i).x * TEXTURESIZE,
+                            mapDiscovered.get(i).y* TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
                 }
             }
         }
@@ -665,6 +705,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                     playerChar.y = (int) worldTouch.y;
                     newMap[playerChar.x][playerChar.y] = PLAYER;
                     camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
+                    updateMapDiscovered();
                 }
                 //initialize a goal node for pathfinding (player character)
                 goalNode = new Node();
