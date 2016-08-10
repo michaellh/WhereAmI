@@ -67,6 +67,6 @@ public class Node implements Comparable<Node>{
 
     @Override
     public int hashCode() {
-        return this.getfScore();
+        return 0;
     }
 }

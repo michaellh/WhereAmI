@@ -134,8 +134,6 @@ public class GameplayScreen implements Screen, InputProcessor {
         playerChar.x = ranPosX;
         playerChar.y = ranPosY;
         newMap[playerChar.x][playerChar.y] = PLAYER;
-        Vector2 playerPos = new Vector2(playerChar.getX(), playerChar.getY());
-        mapDiscovered.add(new Vector2(playerChar.getX(), playerChar.getY()));
         camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
         camera.update();
 
@@ -186,7 +184,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                     stage.getActors().get(i).setVisible(false);
                 }
                 camera.setToOrtho(false, screenWidth, screenHeight);
-                camera.position.set(screenWidth, screenHeight, 0);
+                camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
                 mapPressed = true;
                 mapExit = new MapExit(objection, cellWidth, cellHeight);
                 mapExit.setBounds(cellWidth * 9, cellHeight * 7, objection.getWidth(), objection.getHeight());
@@ -211,6 +209,8 @@ public class GameplayScreen implements Screen, InputProcessor {
                         stage.getActors().get(mapButtonIndex).setVisible(true);
                         int optButtonIndex = stage.getActors().indexOf(optButton, true);
                         stage.getActors().get(optButtonIndex).setVisible(true);
+                        int hpBarIndex = stage.getActors().indexOf(playerHPBar, true);
+                        stage.getActors().get(hpBarIndex).setVisible(true);
                     }
                 });
                 mapSeePlayer = new MapSeePlayer(chinPo, cellWidth, cellHeight);
@@ -527,20 +527,41 @@ public class GameplayScreen implements Screen, InputProcessor {
 
     public void updateMapDiscovered() {
         Vector2 mapTileDiscovered;
+        boolean tileDiscovered = false;
+
+        if(mapDiscovered.size() == 0) {
+            mapDiscovered.add(new Vector2(playerChar.getX(), playerChar.getY()));
+        }
+        int mapDiscoveredSize = mapDiscovered.size();
         for(int i = (playerChar.getX() - 2); i <= (playerChar.getX() + 2); i++) {
             for(int j = (playerChar.getY() - 2); j <= (playerChar.getY() + 2); j++) {
-                if((i >= 0 && i <= tiledMapWidth) &&
-                        (j >= 0 && j <= tiledMapHeight)) {
+                if((i >= 0 && i <= (tiledMapWidth - 1)) &&
+                        (j >= 0 && j <= (tiledMapHeight - 1))) {
                     mapTileDiscovered = new Vector2(i, j);
-                    for (int k = 0; k < mapDiscovered.size(); k++) {
+                    for (int k = 0; k < mapDiscoveredSize; k++) {
+                        /*
                         if (!mapDiscovered.get(k).equals(mapTileDiscovered)
                                 && (k == (mapDiscovered.size() - 1))) {
                             mapDiscovered.add(mapTileDiscovered);
+                        }*/
+                        //System.out.println(mapDiscovered.get(k).x + " " + mapTileDiscovered.x);
+                        //System.out.println(mapDiscovered.get(k).y + " " + mapTileDiscovered.y);
+                        if(((mapDiscovered.get(k).x == mapTileDiscovered.x) &&
+                                (mapDiscovered.get(k).y == mapTileDiscovered.y))){
+                            tileDiscovered = true;
                         }
+                    }
+                    if(tileDiscovered == true) {
+                        tileDiscovered = false;
+                        continue;
+                    }
+                    else{
+                        mapDiscovered.add(mapTileDiscovered);
                     }
                 }
             }
         }
+        System.out.println(mapDiscovered.size());
     }
 
     @Override
@@ -562,10 +583,11 @@ public class GameplayScreen implements Screen, InputProcessor {
                     stage.getBatch().draw(sadFace, playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE,
                             TEXTURESIZE, TEXTURESIZE);
                 }
+                /*
                 else if (newMap[(int) mapDiscovered.get(i).x][(int) mapDiscovered.get(i).y] == ENEMY) {
                     stage.getBatch().draw(neutralFace, mapDiscovered.get(i).x * TEXTURESIZE,
                             mapDiscovered.get(i).y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
-                }
+                }*/
                 else if (newMap[(int) mapDiscovered.get(i).x][(int) mapDiscovered.get(i).y] == EXIT) {
                     stage.getBatch().draw(uglySean2, mapDiscovered.get(i).x * TEXTURESIZE,
                             mapDiscovered.get(i).y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
@@ -704,8 +726,8 @@ public class GameplayScreen implements Screen, InputProcessor {
                     playerChar.x = (int) worldTouch.x;
                     playerChar.y = (int) worldTouch.y;
                     newMap[playerChar.x][playerChar.y] = PLAYER;
-                    camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
                     updateMapDiscovered();
+                    camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
                 }
                 //initialize a goal node for pathfinding (player character)
                 goalNode = new Node();
@@ -730,7 +752,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                     if (path == null || path.size == 0) {
                         continue;
                     }
-                    if (path.size == 1) {
+                    else if (path.size == 1) {
                         damage = enemies.get(i).ATK - playerChar.DEF;
                         playerHPBar.setValue(playerChar.HP - damage);
                         result = playerChar.takeDamage(damage);
@@ -740,12 +762,14 @@ public class GameplayScreen implements Screen, InputProcessor {
                         }
                         continue;
                     }
-                    //move the enemy units one tile closer to the player
-                    newMap[enemies.get(i).x][enemies.get(i).y] = FLOOR;
-                    enemies.get(i).x = path.get(1).getCurrentX();
-                    enemies.get(i).y = path.get(1).getCurrentY();
-                    newMap[enemies.get(i).x][enemies.get(i).y] = ENEMY;
-                    path = null;
+                    else {
+                        //move the enemy units one tile closer to the player
+                        newMap[enemies.get(i).x][enemies.get(i).y] = FLOOR;
+                        enemies.get(i).x = path.get(1).getCurrentX();
+                        enemies.get(i).y = path.get(1).getCurrentY();
+                        newMap[enemies.get(i).x][enemies.get(i).y] = ENEMY;
+                        path = null;
+                    }
                 }
             }
         }
