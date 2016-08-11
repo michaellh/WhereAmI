@@ -1,4 +1,4 @@
-package com.badlogic.gamescreentest;
+package com.badlogic.gamescreentest.menuButtons;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
