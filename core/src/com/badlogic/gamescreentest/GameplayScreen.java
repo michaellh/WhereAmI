@@ -61,7 +61,7 @@ public class GameplayScreen implements Screen, InputProcessor {
     int tiledMapWidth, tiledMapHeight;
     int FLOOR, WALL, PLAYER, ENEMY, EXIT;
     int TEXTURESIZE;
-    int enemyNum, wallCount;
+    int wallCount;
 
     boolean options;
     boolean mapPressed;
@@ -80,7 +80,6 @@ public class GameplayScreen implements Screen, InputProcessor {
         cellHeight = screenHeight / 8;
         options = false;
         mapPressed = false;
-        mapDiscovered = new ArrayList<Vector2>();
 
         TEXTURESIZE = 32;
         FLOOR = 0;
@@ -90,19 +89,6 @@ public class GameplayScreen implements Screen, InputProcessor {
         EXIT = 4;
 
         rand = new Random();
-        tiledMapWidth = randInt(50, 100);
-        tiledMapHeight = randInt(50, 100);
-        enemyNum = randInt(5, 10);
-
-        //initialize the player character's stats
-        playerChar = new PlayerCharacter(randInt(10, 15), 5,
-                0, randInt(0, 10));
-        //initialize a random-sized array of standard enemies and their stats
-        enemies = new Array<standardEnemy>();
-        for(int i = 0; i < randInt(5, 10); i++) {
-            enemies.add(new standardEnemy(randInt(10, 15), 1,
-                    0, randInt(0, 10)));
-        }
 
         //set up the Game, SpriteBatch, and OrthographicCamera
         this.game = gam;
@@ -123,36 +109,8 @@ public class GameplayScreen implements Screen, InputProcessor {
         opm = assetManager.get("1pman.jpg", Texture.class);
         man = assetManager.get("man.png", Texture.class);
 
-        //create the game world
-        newMap = createWorld();
-
-        //initialize player character position
-        while(newMap[ranPosX][ranPosY] != FLOOR) {
-            ranPosX = randInt(1, (tiledMapWidth - 1));
-            ranPosY = randInt(1, (tiledMapHeight - 1));
-        }
-        playerChar.x = ranPosX;
-        playerChar.y = ranPosY;
-        newMap[playerChar.x][playerChar.y] = PLAYER;
-        camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
-        camera.update();
-
-        for(int i = 0; i < enemies.size; i++) {
-            while(newMap[ranPosX][ranPosY] != FLOOR) {
-                ranPosX = randInt(1, (tiledMapWidth - 1));
-                ranPosY = randInt(1, (tiledMapHeight - 1));
-            }
-            enemies.get(i).x = ranPosX;
-            enemies.get(i).y = ranPosY;
-            newMap[enemies.get(i).x][enemies.get(i).y] = ENEMY;
-        }
-
-        while(newMap[ranPosX][ranPosY] != FLOOR) {
-            ranPosX = randInt(1, (tiledMapWidth - 1));
-            ranPosY = randInt(1, (tiledMapHeight - 1));
-        }
-        newMap[ranPosX][ranPosY] = EXIT;
-        System.out.println(ranPosX + " " + ranPosY);
+        //create the world
+        recreateWorld();
 
         //initialize the HUD buttons and add them to the stage as actors
         Sprite spriteBack = new Sprite(opm);
@@ -167,6 +125,7 @@ public class GameplayScreen implements Screen, InputProcessor {
         playerHPBar.setSize(spriteBack.getWidth(), spriteBack.getHeight());
         playerHPBar.setPosition(0, 7 * cellHeight + spriteBack.getHeight());
         playerHPBar.setValue(playerChar.HP);
+        stage.addActor(playerHPBar);
 
         mapButton = new MapHUD(chinPo, cellWidth, cellHeight);
         mapButton.setBounds(cellWidth * 8, cellHeight * 7, chinPo.getWidth(), chinPo.getHeight());
@@ -229,6 +188,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                 });
             }
         });
+        stage.addActor(mapButton);
         optButton = new gameOptions(objection, cellWidth, cellHeight);
         optButton.setBounds(cellWidth * 9, cellHeight * 7, objection.getWidth(), objection.getHeight());
         optButton.addListener(new InputListener() {
@@ -244,6 +204,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                 options = true;
             }
         });
+        stage.addActor(optButton);
 
         /*
         skin = new Skin(Gdx.files.local("uiskin.json"));
@@ -255,10 +216,6 @@ public class GameplayScreen implements Screen, InputProcessor {
         table.addActor(textButton);
         stage.addActor(table);
         //stage.getActors().;*/
-
-        stage.addActor(mapButton);
-        stage.addActor(optButton);
-        stage.addActor(playerHPBar);
 
         //give priority touch to the stage actors
         InputMultiplexer im = new InputMultiplexer(stage, this);
@@ -387,6 +344,59 @@ public class GameplayScreen implements Screen, InputProcessor {
             map[tiledMapWidth - 1][j] = WALL;
         }
         return map;
+    }
+
+    /*
+    Description: creates a new world that's randomly populated
+    Function: recreateWorld()
+    Inputs: None
+    Outputs: None
+     */
+    public void recreateWorld() {
+        tiledMapWidth = randInt(50, 100);
+        tiledMapHeight = randInt(50, 100);
+        mapDiscovered = new ArrayList<Vector2>();
+
+        //reinitialize the player character and enemy stats
+        playerChar = new PlayerCharacter(randInt(10, 15), 5,
+                0, randInt(0, 10));
+        //initialize a random-sized array of standard enemies and their stats
+        enemies = new Array<standardEnemy>();
+        for(int i = 0; i < randInt(5, 10); i++) {
+            enemies.add(new standardEnemy(randInt(10, 15), 1,
+                    0, randInt(0, 10)));
+        }
+
+        //generate a new world map
+        newMap = createWorld();
+
+        //initialize player character, enemies, and exit positions
+        while(newMap[ranPosX][ranPosY] != FLOOR) {
+            ranPosX = randInt(1, (tiledMapWidth - 1));
+            ranPosY = randInt(1, (tiledMapHeight - 1));
+        }
+        playerChar.x = ranPosX;
+        playerChar.y = ranPosY;
+        newMap[playerChar.x][playerChar.y] = PLAYER;
+        updateMapDiscovered();
+        camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
+
+        for(int i = 0; i < enemies.size; i++) {
+            while(newMap[ranPosX][ranPosY] != FLOOR) {
+                ranPosX = randInt(1, (tiledMapWidth - 1));
+                ranPosY = randInt(1, (tiledMapHeight - 1));
+            }
+            enemies.get(i).x = ranPosX;
+            enemies.get(i).y = ranPosY;
+            newMap[enemies.get(i).x][enemies.get(i).y] = ENEMY;
+        }
+
+        while(newMap[ranPosX][ranPosY] != FLOOR) {
+            ranPosX = randInt(1, (tiledMapWidth - 1));
+            ranPosY = randInt(1, (tiledMapHeight - 1));
+        }
+        newMap[ranPosX][ranPosY] = EXIT;
+        System.out.println(ranPosX + " " + ranPosY);
     }
 
     /*
@@ -539,13 +549,6 @@ public class GameplayScreen implements Screen, InputProcessor {
                         (j >= 0 && j <= (tiledMapHeight - 1))) {
                     mapTileDiscovered = new Vector2(i, j);
                     for (int k = 0; k < mapDiscoveredSize; k++) {
-                        /*
-                        if (!mapDiscovered.get(k).equals(mapTileDiscovered)
-                                && (k == (mapDiscovered.size() - 1))) {
-                            mapDiscovered.add(mapTileDiscovered);
-                        }*/
-                        //System.out.println(mapDiscovered.get(k).x + " " + mapTileDiscovered.x);
-                        //System.out.println(mapDiscovered.get(k).y + " " + mapTileDiscovered.y);
                         if(((mapDiscovered.get(k).x == mapTileDiscovered.x) &&
                                 (mapDiscovered.get(k).y == mapTileDiscovered.y))){
                             tileDiscovered = true;
@@ -561,7 +564,6 @@ public class GameplayScreen implements Screen, InputProcessor {
                 }
             }
         }
-        System.out.println(mapDiscovered.size());
     }
 
     @Override
@@ -718,7 +720,8 @@ public class GameplayScreen implements Screen, InputProcessor {
                 }
                 else if (newMap[(int) worldTouch.x][(int) worldTouch.y] == EXIT) {
                     System.out.println("YOU WIN!");
-                    System.out.println("\n" + "Touch: " + worldTouch.x + " " + worldTouch.y);
+                    recreateWorld();
+                    playerHPBar.setValue(playerChar.HP);
                     return true;
                 }
                 else if (newMap[(int) worldTouch.x][(int) worldTouch.y] == FLOOR) {
