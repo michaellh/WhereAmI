@@ -24,6 +24,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.SpriteDrawable;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.PriorityQueue;
 import java.util.Random;
@@ -112,6 +113,12 @@ public class GameplayScreen implements Screen, InputProcessor {
         //create the world
         recreateWorld();
 
+        System.out.println("newMap's x: " + tiledMapWidth);
+        System.out.println("newMap's y: " + tiledMapHeight);
+
+        SaveFile saveFile = new SaveFile(newMap, mapDiscovered, enemies, playerChar);
+        saveFile.writeToSaveFile();
+
         //initialize the HUD buttons and add them to the stage as actors
         Sprite spriteBack = new Sprite(opm);
         spriteBack.setSize(cellWidth * 3, (cellHeight / 2));
@@ -127,6 +134,7 @@ public class GameplayScreen implements Screen, InputProcessor {
         playerHPBar.setValue(playerChar.HP);
         stage.addActor(playerHPBar);
 
+        // Add the map button to the stage
         mapButton = new MapHUD(chinPo, cellWidth, cellHeight);
         mapButton.setBounds(cellWidth * 8, cellHeight * 7, chinPo.getWidth(), chinPo.getHeight());
         mapButton.addListener(new InputListener() {
@@ -139,12 +147,15 @@ public class GameplayScreen implements Screen, InputProcessor {
             @Override
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                 System.out.println("map touched up");
+                // Temporarily disable the HP bar, map mode button, and the options button
                 for(int i = 0; i < stage.getActors().size; i++) {
                     stage.getActors().get(i).setVisible(false);
                 }
+                // Make the camera view the entire world instead of the window in game mode
                 camera.setToOrtho(false, screenWidth, screenHeight);
                 camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
                 mapPressed = true;
+                // Adds a map exit button in map mode to the stage
                 mapExit = new MapExit(objection, cellWidth, cellHeight);
                 mapExit.setBounds(cellWidth * 9, cellHeight * 7, objection.getWidth(), objection.getHeight());
                 stage.addActor(mapExit);
@@ -157,13 +168,16 @@ public class GameplayScreen implements Screen, InputProcessor {
                     @Override
                     public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                         mapPressed = false;
+                        // Sets the camera back to game mode view
                         camera.setToOrtho(false, 14 * TEXTURESIZE, 10 * TEXTURESIZE);
                         camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
+                        // Disable the find player button and the map exit button
                         int mapExitLocation = stage.getActors().indexOf(mapExit, true);
                         stage.getActors().get(mapExitLocation).setVisible(false);
                         int mapFindPlayer = stage.getActors().indexOf(mapSeePlayer, true);
                         stage.getActors().get(mapFindPlayer).setVisible(false);
 
+                        // Enables the HP bar, map mode button, and the options button
                         int mapButtonIndex = stage.getActors().indexOf(mapButton, true);
                         stage.getActors().get(mapButtonIndex).setVisible(true);
                         int optButtonIndex = stage.getActors().indexOf(optButton, true);
@@ -172,6 +186,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                         stage.getActors().get(hpBarIndex).setVisible(true);
                     }
                 });
+                // Adds a see player button in map mode
                 mapSeePlayer = new MapSeePlayer(chinPo, cellWidth, cellHeight);
                 mapSeePlayer.setBounds(cellWidth * 8, cellHeight * 7, chinPo.getWidth(), chinPo.getHeight());
                 stage.addActor(mapSeePlayer);
@@ -189,6 +204,7 @@ public class GameplayScreen implements Screen, InputProcessor {
             }
         });
         stage.addActor(mapButton);
+
         optButton = new gameOptions(objection, cellWidth, cellHeight);
         optButton.setBounds(cellWidth * 9, cellHeight * 7, objection.getWidth(), objection.getHeight());
         optButton.addListener(new InputListener() {
@@ -224,6 +240,7 @@ public class GameplayScreen implements Screen, InputProcessor {
 
     public int[][] createWorld() {
         ogMap = new int[tiledMapWidth][tiledMapHeight];
+
         for(int i = 0; i < tiledMapWidth; i++) {
             for(int j = 0; j < tiledMapHeight; j++) {
                 if(randInt(0, 100) < 40) {
