@@ -15,9 +15,11 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.SpriteDrawable;
@@ -110,14 +112,7 @@ public class GameplayScreen implements Screen, InputProcessor {
         opm = assetManager.get("1pman.jpg", Texture.class);
         man = assetManager.get("man.png", Texture.class);
 
-        //create the world
-        recreateWorld();
-
-        System.out.println("newMap's x: " + tiledMapWidth);
-        System.out.println("newMap's y: " + tiledMapHeight);
-
-        SaveFile saveFile = new SaveFile(newMap, mapDiscovered, enemies, playerChar);
-        saveFile.writeToSaveFile();
+        LoadData();
 
         //initialize the HUD buttons and add them to the stage as actors
         Sprite spriteBack = new Sprite(opm);
@@ -217,6 +212,7 @@ public class GameplayScreen implements Screen, InputProcessor {
             @Override
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                 System.out.println("options touched up");
+                SaveData();
                 options = true;
             }
         });
@@ -236,6 +232,36 @@ public class GameplayScreen implements Screen, InputProcessor {
         //give priority touch to the stage actors
         InputMultiplexer im = new InputMultiplexer(stage, this);
         Gdx.input.setInputProcessor(im);
+    }
+
+    public void LoadData() {
+        SaveFile saveFile = new SaveFile();
+        if(saveFile.ifFileExists("android/assets/saveMapFile.txt") &&
+                saveFile.ifFileExists("android/assets/mapDiscoveredFile.txt") &&
+                saveFile.ifFileExists("android/assets/playerFile.txt") &&
+                saveFile.ifFileExists("android/assets/enemiesFile.txt")) {
+            playerChar = saveFile.readPlayer();
+            enemies = saveFile.readEnemies();
+            newMap = saveFile.readSaveMap();
+            mapDiscovered = saveFile.readMapDiscovered();
+            Vector2 mapWidthHeight = saveFile.readMapWidthHeight();
+            tiledMapWidth = (int) mapWidthHeight.x;
+            tiledMapHeight = (int) mapWidthHeight.y;
+            camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
+        }
+        else {
+            //create the world
+            recreateWorld();
+            SaveData();
+        }
+    }
+
+    public void SaveData() {
+        SaveFile saveFile = new SaveFile(newMap, mapDiscovered, enemies, playerChar, tiledMapWidth, tiledMapHeight);
+        saveFile.writePlayer();
+        saveFile.writeEnemies();
+        saveFile.writeSaveMap();
+        saveFile.writeMapDiscovered();
     }
 
     public int[][] createWorld() {
@@ -379,7 +405,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                 0, randInt(0, 10));
         //initialize a random-sized array of standard enemies and their stats
         enemies = new Array<standardEnemy>();
-        for(int i = 0; i < randInt(5, 10); i++) {
+        for(int i = 0; i < randInt(2, 3); i++) {
             enemies.add(new standardEnemy(randInt(10, 15), 1,
                     0, randInt(0, 10)));
         }
@@ -413,7 +439,7 @@ public class GameplayScreen implements Screen, InputProcessor {
             ranPosY = randInt(1, (tiledMapHeight - 1));
         }
         newMap[ranPosX][ranPosY] = EXIT;
-        System.out.println(ranPosX + " " + ranPosY);
+        System.out.println("EXIT: " + ranPosX + " " + ranPosY);
     }
 
     /*
@@ -750,6 +776,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                     camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
                 }
                 //initialize a goal node for pathfinding (player character)
+                System.out.println(playerChar.getX() + " " + playerChar.getY());
                 goalNode = new Node();
                 goalNode.setCurrentX(playerChar.getX());
                 goalNode.setCurrentY(playerChar.getY());
