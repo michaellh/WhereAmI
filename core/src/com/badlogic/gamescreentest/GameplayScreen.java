@@ -68,9 +68,8 @@ public class GameplayScreen implements Screen, InputProcessor {
 
     boolean options;
     boolean mapPressed;
+    boolean gameOver;
     int ranPosX, ranPosY, startPosX, startPosY, endPosX, endPosY;
-    int damage;
-    int result;
 
     ArrayList<Vector2> mapDiscovered;
     Vector2 userTouch, dragOld, dragNew;
@@ -81,6 +80,7 @@ public class GameplayScreen implements Screen, InputProcessor {
         screenHeight = Gdx.graphics.getHeight();
         cellWidth = screenWidth / 10;
         cellHeight = screenHeight / 8;
+        gameOver = false;
         options = false;
         mapPressed = false;
 
@@ -123,7 +123,7 @@ public class GameplayScreen implements Screen, InputProcessor {
         SpriteDrawable spriteDrawableKnob = new SpriteDrawable(spriteKnob);
         hpBarStyle = new HPBarStyle(spriteDrawableBack, spriteDrawableKnob);
         hpBarStyle.knobBefore = hpBarStyle.knob;
-        playerHPBar = new PlayerHPBar(0, playerChar.HP, 1, false, hpBarStyle);
+        playerHPBar = new PlayerHPBar(0, playerChar.hpBeforeSave, 1, false, hpBarStyle);
         playerHPBar.setSize(spriteBack.getWidth(), spriteBack.getHeight());
         playerHPBar.setPosition(0, 7 * cellHeight + spriteBack.getHeight());
         playerHPBar.setValue(playerChar.HP);
@@ -252,6 +252,7 @@ public class GameplayScreen implements Screen, InputProcessor {
         else {
             //create the world
             recreateWorld();
+            playerChar.setHpBeforeSave(playerChar.HP);
             SaveData();
         }
     }
@@ -618,7 +619,11 @@ public class GameplayScreen implements Screen, InputProcessor {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         stage.getBatch().begin();
-        if(mapPressed) {
+        if(gameOver) {
+            Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+            // render the game over screen
+        }
+        else if(mapPressed) {
             for(int i = 0; i < mapDiscovered.size(); i++) {
                 if(newMap[(int) mapDiscovered.get(i).x][(int) mapDiscovered.get(i).y] == WALL) {
                     stage.getBatch().draw(happyFace, mapDiscovered.get(i).x * TEXTURESIZE,
@@ -733,6 +738,9 @@ public class GameplayScreen implements Screen, InputProcessor {
 
     @Override
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+        if(gameOver) {
+            this.game.setScreen(new MainMenuScreen(game));
+        }
         if(mapPressed) {
             return false;
         }
@@ -752,9 +760,8 @@ public class GameplayScreen implements Screen, InputProcessor {
                     for(int i = 0; i < enemies.size; i++) {
                         if(worldTouch.x == enemies.get(i).getX() &&
                                 worldTouch.y == enemies.get(i).getY()) {
-                            damage = playerChar.ATK - enemies.get(i).DEF;
-                            result = enemies.get(i).takeDamage(damage);
-                            if(result == FLOOR) {
+                            enemies.get(i).takeDamage(playerChar.ATK);
+                            if(enemies.get(i).isDead()) {
                                 newMap[enemies.get(i).getX()][enemies.get(i).getY()] = FLOOR;
                                 enemies.removeIndex(i);
                             }
@@ -762,9 +769,11 @@ public class GameplayScreen implements Screen, InputProcessor {
                     }
                 }
                 else if (newMap[(int) worldTouch.x][(int) worldTouch.y] == EXIT) {
-                    System.out.println("YOU WIN!");
                     recreateWorld();
+                    playerChar.setHpBeforeSave(playerChar.HP);
+                    playerHPBar.setRange(0, playerChar.HP);
                     playerHPBar.setValue(playerChar.HP);
+                    SaveData();
                     return true;
                 }
                 else if (newMap[(int) worldTouch.x][(int) worldTouch.y] == FLOOR) {
@@ -776,7 +785,6 @@ public class GameplayScreen implements Screen, InputProcessor {
                     camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
                 }
                 //initialize a goal node for pathfinding (player character)
-                System.out.println(playerChar.getX() + " " + playerChar.getY());
                 goalNode = new Node();
                 goalNode.setCurrentX(playerChar.getX());
                 goalNode.setCurrentY(playerChar.getY());
@@ -800,12 +808,14 @@ public class GameplayScreen implements Screen, InputProcessor {
                         continue;
                     }
                     else if (path.size == 1) {
-                        damage = enemies.get(i).ATK - playerChar.DEF;
-                        playerHPBar.setValue(playerChar.HP - damage);
-                        result = playerChar.takeDamage(damage);
-                        if (result == FLOOR) {
-                            newMap[playerChar.getX()][playerChar.getY()] = FLOOR;
-                            playerChar.die();
+                        playerChar.takeDamage(enemies.get(i).ATK);
+                        playerHPBar.setValue(playerChar.HP);
+                        if(playerChar.isDead()) {
+                            System.out.println("The player has died!");
+                            gameOver = true;
+                            for(int actors = 0; actors < stage.getActors().size; actors++) {
+                                stage.getActors().get(actors).addAction(Actions.removeActor());
+                            }
                         }
                         continue;
                     }

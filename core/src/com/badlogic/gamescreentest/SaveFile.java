@@ -145,13 +145,14 @@ public class SaveFile {
             //System.out.println(fileText);
             String[] fileTextSplit = fileText.split(",");
             for(int i = 0; i < fileTextSplit.length; i = i + 2) {
-                saveMapDiscovered.add(new Vector2(Float.parseFloat(fileTextSplit[i]),
-                        Float.parseFloat(fileTextSplit[i + 1])));
+                if((i + 1) >= fileTextSplit.length) {
+                    break;
+                }
+                else {
+                    saveMapDiscovered.add(new Vector2(Float.parseFloat(fileTextSplit[i]),
+                            Float.parseFloat(fileTextSplit[i + 1])));
+                }
             }
-            /*
-            for(int j = 0; j < saveMapDiscovered.size(); j++) {
-                System.out.println(j + ": " + saveMapDiscovered.get(j).x + " " + saveMapDiscovered.get(j).y);
-            }*/
             System.out.println("Read map discovered");
             return saveMapDiscovered;
         }
@@ -172,7 +173,8 @@ public class SaveFile {
             saveFileHandle.writeString(Integer.toString(savePlayer.HP) + ",", true);
             saveFileHandle.writeString(Integer.toString(savePlayer.ATK) + ",", true);
             saveFileHandle.writeString(Integer.toString(savePlayer.DEF) + ",", true);
-            saveFileHandle.writeString(Integer.toString(savePlayer.LUK), true);
+            saveFileHandle.writeString(Integer.toString(savePlayer.LUK) + ",", true);
+            saveFileHandle.writeString(Integer.toString(savePlayer.hpBeforeSave), true);
             System.out.println("Wrote to playerFile");
         } catch (Exception e) {
             System.out.println("Error when writing to player file!");
@@ -196,7 +198,9 @@ public class SaveFile {
             int ATK = Integer.parseInt(fileTextSplit[3]);
             int DEF = Integer.parseInt(fileTextSplit[4]);
             int LUK = Integer.parseInt(fileTextSplit[5]);
+            int hpBeforeSave = Integer.parseInt(fileTextSplit[6]);
             savePlayer = new PlayerCharacter(HP, ATK, DEF, LUK);
+            savePlayer.setHpBeforeSave(hpBeforeSave);
             savePlayer.x = x;
             savePlayer.y = y;
             return savePlayer;

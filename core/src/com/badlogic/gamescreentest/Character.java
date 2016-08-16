@@ -7,7 +7,6 @@ public class Character {
     int x;
     int y;
 
-    int STATUS;
     int HP;
     int ATK;
     int DEF;
@@ -21,7 +20,14 @@ public class Character {
         return y;
     }
 
-    public int takeDamage(int dmg) {return STATUS;}
+    public void takeDamage(int dmg) {
+        this.HP = (this.HP + this.DEF) - dmg;
+    }
 
-    public void die() {}
+    public boolean isDead() {
+        if(this.HP <= 0) {
+            return true;
+        }
+        return false;
+    }
 }

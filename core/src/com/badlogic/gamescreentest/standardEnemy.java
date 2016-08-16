@@ -16,18 +16,8 @@ public class standardEnemy extends Character {
     }
 
     @Override
-    public int takeDamage(int dmg) {
-        System.out.println("Touched my body!!!");
-        System.out.println(this.HP);
-        this.HP = (this.HP + this.DEF) -  dmg;
-        if(this.HP <= 0) {
-            return 0;
-        }
-        return 3;
-    }
-
-    @Override
-    public void die() {
-        System.out.println("The enemy has died!!!");
+    public void takeDamage(int dmg) {
+        super.takeDamage(dmg);
+        System.out.println("Enemy HP remaining: " + this.HP);
     }
 }
