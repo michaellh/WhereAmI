@@ -106,8 +106,8 @@ public class SaveFile {
             FileHandle saveFileHandle = Gdx.files.local("android/assets/saveMapFile.txt");
             String fileText = saveFileHandle.readString();
             String[] fileTextSplit = fileText.split(",");
-            int width = Integer.parseInt(fileTextSplit[fileTextSplit.length - 2]);
-            int height = Integer.parseInt(fileTextSplit[fileTextSplit.length - 1]);
+            int width = Integer.parseInt(fileTextSplit[fileTextSplit.length - 3]);
+            int height = Integer.parseInt(fileTextSplit[fileTextSplit.length - 2]);
             saveMap = new int[width][height];
             int fileSplitLength = 0;
             for(int i = 0; i < width; i++) {

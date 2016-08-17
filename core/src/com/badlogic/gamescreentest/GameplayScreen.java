@@ -803,10 +803,9 @@ public class GameplayScreen implements Screen, InputProcessor {
                                 BitmapFont font = new BitmapFont();
                                 font.getData().setScale(5, 5);
                                 Label.LabelStyle textStyle = new Label.LabelStyle(font, Color.WHITE);
-                                Label text = new Label("\t\tGame over!\n\t\tFloors cleared: " + floorLevel
-                                        + "\n\tPress anywhere to return to the main menu!", textStyle);
+                                Label text = new Label("\tGame over!\n\tFloors cleared: " + floorLevel
+                                        + "\nPress anywhere to return to the main menu!", textStyle);
                                 text.setPosition(screenWidth / 2, screenHeight / 2);
-                                text.setBounds(0, 0, screenWidth, screenHeight);
                                 stage.addActor(text);
                                 SaveFile saveFiles = new SaveFile();
                                 saveFiles.deleteSaveData();
