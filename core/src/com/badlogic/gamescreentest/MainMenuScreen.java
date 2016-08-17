@@ -3,14 +3,18 @@ package com.badlogic.gamescreentest;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
+import com.badlogic.gdx.scenes.scene2d.actions.SequenceAction;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
 /**
@@ -21,6 +25,10 @@ public class MainMenuScreen implements Screen {
     OrthographicCamera camera;
     Stage stage;
     AssetManager assetManager;
+    SaveFile saveFile;
+    Label text;
+    Label.LabelStyle textStyle;
+    BitmapFont font;
 
     private MainMenuBackGround backGround;
     private com.badlogic.gamescreentest.menuButtons.MainMenuCont contButton;
@@ -39,6 +47,7 @@ public class MainMenuScreen implements Screen {
         cellHeight = screenHeight / 3;
 
         game = gam;
+        saveFile = new SaveFile();
 
         // Load the assets needed for the game screen
         assetManager = game.assetManager;
@@ -74,6 +83,21 @@ public class MainMenuScreen implements Screen {
             @Override
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                 //continue from the save file
+                if(assetsLoaded && saveFile.saveFilesExist()) {
+                    dispose();
+                    game.setNewGame(false);
+                    game.setScreen(new GameplayScreen(game));
+                }
+                else {
+                    font = new BitmapFont();
+                    font.getData().setScale(5, 5);
+                    textStyle = new Label.LabelStyle(font, Color.BLACK);
+                    text = new Label("No save files found!", textStyle);
+                    text.setPosition(screenWidth/3, cellHeight * 1);
+                    text.addAction(Actions.fadeOut(3));
+                    stage.addActor(text);
+                    System.out.println("No save files detected!");
+                }
             }
         });
         stage.addActor(contButton);
@@ -107,6 +131,7 @@ public class MainMenuScreen implements Screen {
             @Override
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                 dispose();
+                game.setNewGame(true);
                 if(assetsLoaded) {
                     game.setScreen(new GameplayScreen(game));
                 }

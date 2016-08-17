@@ -13,6 +13,7 @@ import java.util.ArrayList;
 public class SaveFile {
     int mapWidth;
     int mapHeight;
+    int saveFloorLevel;
     int[][] saveMap;
     ArrayList<Vector2> saveMapDiscovered;
     Array<standardEnemy> saveEnemies;
@@ -22,18 +23,16 @@ public class SaveFile {
     }
 
     public SaveFile(int[][] map, ArrayList<Vector2> mapDiscovered, Array<standardEnemy> enemies,
-                    PlayerCharacter player, int tiledMapWidth, int tiledMapHeight) {
+                    PlayerCharacter player, int tiledMapWidth, int tiledMapHeight, int level) {
         saveMap = map;
         saveMapDiscovered = mapDiscovered;
         saveEnemies = enemies;
         savePlayer = player;
         mapWidth = tiledMapWidth;
         mapHeight = tiledMapHeight;
-        //System.out.println("x: " + saveMap.length);
-        //System.out.println("y: " + saveMap[0].length);
     }
 
-    public boolean ifFileExists(String file) {
+    public boolean fileExists(String file) {
         FileHandle file1 = Gdx.files.local(file);
         boolean fileExists = file1.exists();
         if(fileExists) {
@@ -42,6 +41,33 @@ public class SaveFile {
         return false;
     }
 
+    public void saveSaveData() {
+        this.writePlayer();
+        this.writeEnemies();
+        this.writeSaveMap();
+        this.writeMapDiscovered();
+    }
+
+    public void deleteSaveData() {
+        FileHandle saveMap = Gdx.files.local("android/assets/saveMapFile.txt");
+        saveMap.delete();
+        FileHandle saveMapDiscovered = Gdx.files.local("android/assets/mapDiscoveredFile.txt");
+        saveMapDiscovered.delete();
+        FileHandle savePlayer = Gdx.files.local("android/assets/playerFile.txt");
+        savePlayer.delete();
+        FileHandle saveEnemies = Gdx.files.local("android/assets/enemiesFile.txt");
+        saveEnemies.delete();
+    }
+
+    public boolean saveFilesExist() {
+        if(fileExists("android/assets/saveMapFile.txt") &&
+                fileExists("android/assets/mapDiscoveredFile.txt") &&
+                fileExists("android/assets/playerFile.txt") &&
+                fileExists("android/assets/enemiesFile.txt")) {
+            return true;
+        }
+        return false;
+    }
 
     public void writeSaveMap() {
         FileHandle saveFile = Gdx.files.local("android/assets/saveMapFile.txt");
@@ -60,6 +86,7 @@ public class SaveFile {
             }
             saveFileHandle.writeString(Integer.toString(mapWidth) + ",", true);
             saveFileHandle.writeString(Integer.toString(mapHeight) + ",", true);
+            saveFileHandle.writeString(Integer.toString(saveFloorLevel) + ",", true);
         }
         catch (Exception e) {
             System.out.println("Error when writing to save map file!");
@@ -68,7 +95,7 @@ public class SaveFile {
     }
 
     public int[][] readSaveMap() {
-        if(!ifFileExists("android/assets/saveMapFile.txt")) {
+        if(!fileExists("android/assets/saveMapFile.txt")) {
             System.out.println("No save map file exists!");
             return null;
         }
@@ -78,9 +105,7 @@ public class SaveFile {
             // In the file it should be in the form of Strings
             FileHandle saveFileHandle = Gdx.files.local("android/assets/saveMapFile.txt");
             String fileText = saveFileHandle.readString();
-            //System.out.println(fileText);
             String[] fileTextSplit = fileText.split(",");
-            //System.out.println(fileTextSplit.length);
             int width = Integer.parseInt(fileTextSplit[fileTextSplit.length - 2]);
             int height = Integer.parseInt(fileTextSplit[fileTextSplit.length - 1]);
             saveMap = new int[width][height];
@@ -91,18 +116,26 @@ public class SaveFile {
                     fileSplitLength = fileSplitLength + 1;
                 }
             }
-            //System.out.println("saveMap.length: " + saveMap.length + " width: " + width + " height: " + height);
             System.out.println("Read save map");
             return saveMap;
         }
+    }
+
+    public int readFloorLevel() {
+        FileHandle saveFileHandle = Gdx.files.local("android/assets/saveMapFile.txt");
+        String fileText = saveFileHandle.readString();
+        String[] fileTextSplit = fileText.split(",");
+        int floorLevel = Integer.parseInt(fileTextSplit[fileTextSplit.length - 1]);
+        System.out.println("Read floor level");
+        return floorLevel;
     }
 
     public Vector2 readMapWidthHeight() {
         FileHandle saveFileHandle = Gdx.files.local("android/assets/saveMapFile.txt");
         String fileText = saveFileHandle.readString();
         String[] fileTextSplit = fileText.split(",");
-        float width = Float.parseFloat(fileTextSplit[fileTextSplit.length - 2]);
-        float height = Float.parseFloat(fileTextSplit[fileTextSplit.length - 1]);
+        float width = Float.parseFloat(fileTextSplit[fileTextSplit.length - 3]);
+        float height = Float.parseFloat(fileTextSplit[fileTextSplit.length - 2]);
         Vector2 mapWidthHeight = new Vector2();
         mapWidthHeight.x = width;
         mapWidthHeight.y = height;
@@ -127,12 +160,11 @@ public class SaveFile {
         } catch (Exception e) {
             System.out.println("Error when writing to map discovered file!");
         }
-        //System.out.println(saveMapDiscovered.size());
         System.out.println("Wrote to discovered map");
     }
 
     public ArrayList<Vector2> readMapDiscovered() {
-        if(!ifFileExists("android/assets/mapDiscoveredFile.txt")) {
+        if(!fileExists("android/assets/mapDiscoveredFile.txt")) {
             System.out.println("No map discovered file exists!");
             return null;
         }
@@ -142,7 +174,6 @@ public class SaveFile {
             saveMapDiscovered = new ArrayList<Vector2>();
             FileHandle saveFileHandle = Gdx.files.local("android/assets/mapDiscoveredFile.txt");
             String fileText = saveFileHandle.readString();
-            //System.out.println(fileText);
             String[] fileTextSplit = fileText.split(",");
             for(int i = 0; i < fileTextSplit.length; i = i + 2) {
                 if((i + 1) >= fileTextSplit.length) {
@@ -176,13 +207,14 @@ public class SaveFile {
             saveFileHandle.writeString(Integer.toString(savePlayer.LUK) + ",", true);
             saveFileHandle.writeString(Integer.toString(savePlayer.hpBeforeSave), true);
             System.out.println("Wrote to playerFile");
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             System.out.println("Error when writing to player file!");
         }
     }
 
     public PlayerCharacter readPlayer() {
-        if(!ifFileExists("android/assets/playerFile.txt")) {
+        if(!fileExists("android/assets/playerFile.txt")) {
             System.out.println("No player file exists!");
             return null;
         }
@@ -203,6 +235,7 @@ public class SaveFile {
             savePlayer.setHpBeforeSave(hpBeforeSave);
             savePlayer.x = x;
             savePlayer.y = y;
+            System.out.println("Read player");
             return savePlayer;
         }
     }
@@ -233,7 +266,7 @@ public class SaveFile {
     }
 
     public Array<standardEnemy> readEnemies() {
-        if(!ifFileExists("android/assets/enemiesFile.txt")) {
+        if(!fileExists("android/assets/enemiesFile.txt")) {
             System.out.println("No enemies file exists!");
             return null;
         }
@@ -242,10 +275,8 @@ public class SaveFile {
             // Read and return the player's stats
             FileHandle saveFileHandle = Gdx.files.local("android/assets/enemiesFile.txt");
             String fileText = saveFileHandle.readString();
-            //System.out.println(fileText);
             String[] fileTextSplit = fileText.split(",");
             int enemySize = Integer.parseInt(fileTextSplit[fileTextSplit.length - 1]);
-            System.out.println(enemySize);
             saveEnemies = new Array<standardEnemy>();
             int counter = 0;
             for (int i = 0; i < enemySize; i++) {
@@ -260,6 +291,7 @@ public class SaveFile {
                 saveEnemies.get(i).x = x;
                 saveEnemies.get(i).y = y;
             }
+            System.out.println("Read enemies");
             return saveEnemies;
         }
     }

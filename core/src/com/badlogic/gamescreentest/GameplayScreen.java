@@ -9,24 +9,24 @@ import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.utils.SpriteDrawable;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.PriorityQueue;
 import java.util.Random;
@@ -40,11 +40,10 @@ public class GameplayScreen implements Screen, InputProcessor {
     OrthographicCamera camera;
     Stage stage;
     AssetManager assetManager;
-    Texture happyFace, neutralFace, sadFace, badLogic, uglySean, humBird, objection, chinPo, uglySean2, opm, man;
+    Texture happyFace, neutralFace, sadFace, badLogic, uglySean, humBird,
+            objection, chinPo, uglySean2, opm, man;
     Random rand;
 
-    Skin skin;
-    TextButton textButton;
     gameOptions optButton;
     MapHUD mapButton;
     MapExit mapExit;
@@ -62,13 +61,10 @@ public class GameplayScreen implements Screen, InputProcessor {
 
     float screenWidth, screenHeight, cellWidth, cellHeight;
     int tiledMapWidth, tiledMapHeight;
-    int FLOOR, WALL, PLAYER, ENEMY, EXIT;
-    int TEXTURESIZE;
-    int wallCount;
+    int FLOOR, WALL, PLAYER, ENEMY, EXIT, TEXTURESIZE;
+    int wallCount, floorLevel;
 
-    boolean options;
-    boolean mapPressed;
-    boolean gameOver;
+    boolean options, mapPressed, gameOver;
     int ranPosX, ranPosY, startPosX, startPosY, endPosX, endPosY;
 
     ArrayList<Vector2> mapDiscovered;
@@ -80,6 +76,7 @@ public class GameplayScreen implements Screen, InputProcessor {
         screenHeight = Gdx.graphics.getHeight();
         cellWidth = screenWidth / 10;
         cellHeight = screenHeight / 8;
+
         gameOver = false;
         options = false;
         mapPressed = false;
@@ -112,7 +109,27 @@ public class GameplayScreen implements Screen, InputProcessor {
         opm = assetManager.get("1pman.jpg", Texture.class);
         man = assetManager.get("man.png", Texture.class);
 
-        LoadData();
+        if (this.game.getNewGame()) {
+            SaveFile saveFile = new SaveFile();
+            saveFile.deleteSaveData();
+            recreateWorld();
+            playerChar.setHpBeforeSave(playerChar.HP);
+            saveFile = new SaveFile(newMap, mapDiscovered, enemies, playerChar,
+                    tiledMapWidth, tiledMapHeight, floorLevel);
+            saveFile.saveSaveData();
+        }
+        else {
+            SaveFile saveFile = new SaveFile();
+            playerChar = saveFile.readPlayer();
+            enemies = saveFile.readEnemies();
+            newMap = saveFile.readSaveMap();
+            mapDiscovered = saveFile.readMapDiscovered();
+            floorLevel = saveFile.readFloorLevel();
+            Vector2 mapWidthHeight = saveFile.readMapWidthHeight();
+            tiledMapWidth = (int) mapWidthHeight.x;
+            tiledMapHeight = (int) mapWidthHeight.y;
+            camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
+        }
 
         //initialize the HUD buttons and add them to the stage as actors
         Sprite spriteBack = new Sprite(opm);
@@ -143,7 +160,7 @@ public class GameplayScreen implements Screen, InputProcessor {
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                 System.out.println("map touched up");
                 // Temporarily disable the HP bar, map mode button, and the options button
-                for(int i = 0; i < stage.getActors().size; i++) {
+                for (int i = 0; i < stage.getActors().size; i++) {
                     stage.getActors().get(i).setVisible(false);
                 }
                 // Make the camera view the entire world instead of the window in game mode
@@ -212,65 +229,25 @@ public class GameplayScreen implements Screen, InputProcessor {
             @Override
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                 System.out.println("options touched up");
-                SaveData();
+                SaveFile saveData = new SaveFile(newMap, mapDiscovered, enemies, playerChar,
+                        tiledMapWidth, tiledMapHeight, floorLevel);
+                saveData.saveSaveData();
                 options = true;
             }
         });
         stage.addActor(optButton);
-
-        /*
-        skin = new Skin(Gdx.files.local("uiskin.json"));
-        textButton = new TextButton("Resume", skin, "default");
-        textButton.setWidth(cellWidth * 2);
-        textButton.setHeight(cellHeight);
-        Table table = new Table(skin);
-        table.setBackground(spriteDrawableBack);
-        table.addActor(textButton);
-        stage.addActor(table);
-        //stage.getActors().;*/
 
         //give priority touch to the stage actors
         InputMultiplexer im = new InputMultiplexer(stage, this);
         Gdx.input.setInputProcessor(im);
     }
 
-    public void LoadData() {
-        SaveFile saveFile = new SaveFile();
-        if(saveFile.ifFileExists("android/assets/saveMapFile.txt") &&
-                saveFile.ifFileExists("android/assets/mapDiscoveredFile.txt") &&
-                saveFile.ifFileExists("android/assets/playerFile.txt") &&
-                saveFile.ifFileExists("android/assets/enemiesFile.txt")) {
-            playerChar = saveFile.readPlayer();
-            enemies = saveFile.readEnemies();
-            newMap = saveFile.readSaveMap();
-            mapDiscovered = saveFile.readMapDiscovered();
-            Vector2 mapWidthHeight = saveFile.readMapWidthHeight();
-            tiledMapWidth = (int) mapWidthHeight.x;
-            tiledMapHeight = (int) mapWidthHeight.y;
-            camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
-        }
-        else {
-            //create the world
-            recreateWorld();
-            playerChar.setHpBeforeSave(playerChar.HP);
-            SaveData();
-        }
-    }
-
-    public void SaveData() {
-        SaveFile saveFile = new SaveFile(newMap, mapDiscovered, enemies, playerChar, tiledMapWidth, tiledMapHeight);
-        saveFile.writePlayer();
-        saveFile.writeEnemies();
-        saveFile.writeSaveMap();
-        saveFile.writeMapDiscovered();
-    }
-
     public int[][] createWorld() {
         ogMap = new int[tiledMapWidth][tiledMapHeight];
 
-        for(int i = 0; i < tiledMapWidth; i++) {
-            for(int j = 0; j < tiledMapHeight; j++) {
-                if(randInt(0, 100) < 40) {
+        for (int i = 0; i < tiledMapWidth; i++) {
+            for (int j = 0; j < tiledMapHeight; j++) {
+                if (randInt(0, 100) < 40) {
                     ogMap[i][j] = WALL;
                 }
             }
@@ -278,7 +255,7 @@ public class GameplayScreen implements Screen, InputProcessor {
 
         ranPosX = randInt(1, (tiledMapWidth - 1));
         ranPosY = randInt(1, (tiledMapHeight - 1));
-        while(ogMap[ranPosX][ranPosY] != FLOOR) {
+        while (ogMap[ranPosX][ranPosY] != FLOOR) {
             ranPosX = randInt(1, (tiledMapWidth - 1));
             ranPosY = randInt(1, (tiledMapHeight - 1));
         }
@@ -298,16 +275,16 @@ public class GameplayScreen implements Screen, InputProcessor {
     }
 
     public int[][] floodFill(int[][] node, int x, int y, int target, int replace) {
-        if(x <= 0 || x >= tiledMapWidth) {
+        if (x <= 0 || x >= tiledMapWidth) {
             return node;
         }
-        if(y <= 0 || y >= tiledMapHeight) {
+        if (y <= 0 || y >= tiledMapHeight) {
             return node;
         }
-        if(target == replace) {
+        if (target == replace) {
             return node;
         }
-        if(node[x][y] != target) {
+        if (node[x][y] != target) {
             return node;
         }
         node[x][y] = replace;
@@ -326,24 +303,23 @@ public class GameplayScreen implements Screen, InputProcessor {
         wallCount = 0;
         int[][] newMap = new int[tiledMapWidth][tiledMapHeight];
 
-        for(int i = 0; i < tiledMapWidth; i++) {
-            for(int j = 0; j < tiledMapHeight; j++) {
+        for (int i = 0; i < tiledMapWidth; i++) {
+            for (int j = 0; j < tiledMapHeight; j++) {
                 startPosX = (i - 1 < 0) ? i : i - 1;
                 startPosY = (j - 1 < 0) ? j : j - 1;
-                endPosX =   (i + 1 > (tiledMapWidth - 1)) ? i : i + 1;
-                endPosY =   (j + 1 > (tiledMapHeight - 1)) ? j : j + 1;
+                endPosX = (i + 1 > (tiledMapWidth - 1)) ? i : i + 1;
+                endPosY = (j + 1 > (tiledMapHeight - 1)) ? j : j + 1;
 
                 for (int rowNum = startPosX; rowNum <= endPosX; rowNum++) {
                     for (int colNum = startPosY; colNum <= endPosY; colNum++) {
-                        if(oldMap[rowNum][colNum] == WALL) {
+                        if (oldMap[rowNum][colNum] == WALL) {
                             wallCount++;
                         }
                     }
                 }
-                if(oldMap[i][j] == WALL && wallCount >= 4) {
+                if (oldMap[i][j] == WALL && wallCount >= 4) {
                     newMap[i][j] = WALL;
-                }
-                else if(wallCount >= 5) {
+                } else if (wallCount >= 5) {
                     newMap[i][j] = WALL;
                 }
                 wallCount = 0;
@@ -355,21 +331,21 @@ public class GameplayScreen implements Screen, InputProcessor {
     public int[][] mapIter2(int[][] oldMap) {
         int[][] newMap = oldMap;
 
-        for(int i = 0; i < tiledMapWidth; i++) {
-            for(int j = 0; j < tiledMapHeight; j++) {
+        for (int i = 0; i < tiledMapWidth; i++) {
+            for (int j = 0; j < tiledMapHeight; j++) {
                 startPosX = (i - 2 < 0) ? i : i - 2;
                 startPosY = (j - 2 < 0) ? j : j - 2;
-                endPosX =   (i + 2 > (tiledMapWidth - 1)) ? i : i + 2;
-                endPosY =   (j + 2 > (tiledMapHeight - 1)) ? j : j + 2;
+                endPosX = (i + 2 > (tiledMapWidth - 1)) ? i : i + 2;
+                endPosY = (j + 2 > (tiledMapHeight - 1)) ? j : j + 2;
 
                 for (int rowNum = startPosX; rowNum <= endPosX; rowNum++) {
                     for (int colNum = startPosY; colNum <= endPosY; colNum++) {
-                        if(oldMap[rowNum][colNum] == WALL) {
+                        if (oldMap[rowNum][colNum] == WALL) {
                             wallCount++;
                         }
                     }
                 }
-                if(wallCount <= 2){
+                if (wallCount <= 2) {
                     newMap[i][j] = WALL;
                 }
                 wallCount = 0;
@@ -379,11 +355,11 @@ public class GameplayScreen implements Screen, InputProcessor {
     }
 
     public int[][] mapBorders(int[][] map) {
-        for(int i = 0; i < tiledMapWidth; i++) {
+        for (int i = 0; i < tiledMapWidth; i++) {
             map[i][0] = WALL;
             map[i][tiledMapHeight - 1] = WALL;
         }
-        for(int j = 0; j < tiledMapHeight; j++) {
+        for (int j = 0; j < tiledMapHeight; j++) {
             map[0][j] = WALL;
             map[tiledMapWidth - 1][j] = WALL;
         }
@@ -406,7 +382,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                 0, randInt(0, 10));
         //initialize a random-sized array of standard enemies and their stats
         enemies = new Array<standardEnemy>();
-        for(int i = 0; i < randInt(2, 3); i++) {
+        for (int i = 0; i < randInt(2, 3); i++) {
             enemies.add(new standardEnemy(randInt(10, 15), 1,
                     0, randInt(0, 10)));
         }
@@ -415,7 +391,7 @@ public class GameplayScreen implements Screen, InputProcessor {
         newMap = createWorld();
 
         //initialize player character, enemies, and exit positions
-        while(newMap[ranPosX][ranPosY] != FLOOR) {
+        while (newMap[ranPosX][ranPosY] != FLOOR) {
             ranPosX = randInt(1, (tiledMapWidth - 1));
             ranPosY = randInt(1, (tiledMapHeight - 1));
         }
@@ -425,8 +401,8 @@ public class GameplayScreen implements Screen, InputProcessor {
         updateMapDiscovered();
         camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
 
-        for(int i = 0; i < enemies.size; i++) {
-            while(newMap[ranPosX][ranPosY] != FLOOR) {
+        for (int i = 0; i < enemies.size; i++) {
+            while (newMap[ranPosX][ranPosY] != FLOOR) {
                 ranPosX = randInt(1, (tiledMapWidth - 1));
                 ranPosY = randInt(1, (tiledMapHeight - 1));
             }
@@ -435,7 +411,7 @@ public class GameplayScreen implements Screen, InputProcessor {
             newMap[enemies.get(i).x][enemies.get(i).y] = ENEMY;
         }
 
-        while(newMap[ranPosX][ranPosY] != FLOOR) {
+        while (newMap[ranPosX][ranPosY] != FLOOR) {
             ranPosX = randInt(1, (tiledMapWidth - 1));
             ranPosY = randInt(1, (tiledMapHeight - 1));
         }
@@ -463,7 +439,7 @@ public class GameplayScreen implements Screen, InputProcessor {
 
         //check if start node is already the goal node and if it is,
         //return the path
-        if((start.getCurrentX() == goal.getCurrentX()) &&
+        if ((start.getCurrentX() == goal.getCurrentX()) &&
                 (start.getCurrentY() == goal.getCurrentY())) {
             return makePath(start);
         }
@@ -472,7 +448,7 @@ public class GameplayScreen implements Screen, InputProcessor {
         open.add(start);
 
         //while there are still nodes unchecked in open, perform the following:
-        while(!open.isEmpty()) {
+        while (!open.isEmpty()) {
             //sort the open list & in this sort, the compareTo() should move
             //the node with the least cost to the head **priority q auto does it
 
@@ -491,16 +467,15 @@ public class GameplayScreen implements Screen, InputProcessor {
             for (int i = 0; i < neighbours.size; i++) {
                 //if the node isn't in closed then set its parent to the
                 //next best node and then add the node to the open list
-                if(!closed.contains(neighbours.get(i))) {
+                if (!closed.contains(neighbours.get(i))) {
                     int tempGScore = nextBest.getgScore() + 1;
                     neighbours.get(i).setfScore(neighbours.get(i).getgScore() +
                             heuristic(neighbours.get(i), goal));
 
-                    if(!open.contains(neighbours.get(i))) {
+                    if (!open.contains(neighbours.get(i))) {
                         open.add(neighbours.get(i));
-                    }
-                    else{
-                        if(tempGScore >= neighbours.get(i).getgScore()) {
+                    } else {
+                        if (tempGScore >= neighbours.get(i).getgScore()) {
                             continue;
                         }
                     }
@@ -536,7 +511,7 @@ public class GameplayScreen implements Screen, InputProcessor {
 
                 //if a neighbour isn't within the bounds of the world/isn't a floor,
                 //don't initialize and store them into the neighbours array
-                if(newMap[x + node.getCurrentX()][y + node.getCurrentY()] == FLOOR ||
+                if (newMap[x + node.getCurrentX()][y + node.getCurrentY()] == FLOOR ||
                         newMap[x + node.getCurrentX()][y + node.getCurrentY()] == PLAYER) {
                     //create a new Node object and store it into neighbours
                     Node adjNode = new Node();
@@ -583,26 +558,25 @@ public class GameplayScreen implements Screen, InputProcessor {
         Vector2 mapTileDiscovered;
         boolean tileDiscovered = false;
 
-        if(mapDiscovered.size() == 0) {
+        if (mapDiscovered.size() == 0) {
             mapDiscovered.add(new Vector2(playerChar.getX(), playerChar.getY()));
         }
         int mapDiscoveredSize = mapDiscovered.size();
-        for(int i = (playerChar.getX() - 2); i <= (playerChar.getX() + 2); i++) {
-            for(int j = (playerChar.getY() - 2); j <= (playerChar.getY() + 2); j++) {
-                if((i >= 0 && i <= (tiledMapWidth - 1)) &&
+        for (int i = (playerChar.getX() - 2); i <= (playerChar.getX() + 2); i++) {
+            for (int j = (playerChar.getY() - 2); j <= (playerChar.getY() + 2); j++) {
+                if ((i >= 0 && i <= (tiledMapWidth - 1)) &&
                         (j >= 0 && j <= (tiledMapHeight - 1))) {
                     mapTileDiscovered = new Vector2(i, j);
                     for (int k = 0; k < mapDiscoveredSize; k++) {
-                        if(((mapDiscovered.get(k).x == mapTileDiscovered.x) &&
-                                (mapDiscovered.get(k).y == mapTileDiscovered.y))){
+                        if (((mapDiscovered.get(k).x == mapTileDiscovered.x) &&
+                                (mapDiscovered.get(k).y == mapTileDiscovered.y))) {
                             tileDiscovered = true;
                         }
                     }
-                    if(tileDiscovered == true) {
+                    if (tileDiscovered == true) {
                         tileDiscovered = false;
                         continue;
-                    }
-                    else{
+                    } else {
                         mapDiscovered.add(mapTileDiscovered);
                     }
                 }
@@ -619,17 +593,15 @@ public class GameplayScreen implements Screen, InputProcessor {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         stage.getBatch().begin();
-        if(gameOver) {
+        if (gameOver) {
             Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-            // render the game over screen
         }
-        else if(mapPressed) {
-            for(int i = 0; i < mapDiscovered.size(); i++) {
-                if(newMap[(int) mapDiscovered.get(i).x][(int) mapDiscovered.get(i).y] == WALL) {
+        else if (mapPressed) {
+            for (int i = 0; i < mapDiscovered.size(); i++) {
+                if (newMap[(int) mapDiscovered.get(i).x][(int) mapDiscovered.get(i).y] == WALL) {
                     stage.getBatch().draw(happyFace, mapDiscovered.get(i).x * TEXTURESIZE,
                             mapDiscovered.get(i).y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
-                }
-                else if (newMap[(int) mapDiscovered.get(i).x][(int) mapDiscovered.get(i).y] == PLAYER) {
+                } else if (newMap[(int) mapDiscovered.get(i).x][(int) mapDiscovered.get(i).y] == PLAYER) {
                     stage.getBatch().draw(sadFace, playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE,
                             TEXTURESIZE, TEXTURESIZE);
                 }
@@ -641,32 +613,38 @@ public class GameplayScreen implements Screen, InputProcessor {
                 else if (newMap[(int) mapDiscovered.get(i).x][(int) mapDiscovered.get(i).y] == EXIT) {
                     stage.getBatch().draw(uglySean2, mapDiscovered.get(i).x * TEXTURESIZE,
                             mapDiscovered.get(i).y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
-                }
-                else {
+                } else {
                     stage.getBatch().draw(badLogic, mapDiscovered.get(i).x * TEXTURESIZE,
-                            mapDiscovered.get(i).y* TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
+                            mapDiscovered.get(i).y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
                 }
             }
         }
         else {
             for (int i = (playerChar.getX() - 8); i < (playerChar.getX() + 9); i++) {
                 for (int j = (playerChar.getY() - 5); j < (playerChar.getY() + 6); j++) {
+                    //System.out.println("i: " + i + " j: " + j);
+                    //System.out.println("playerChar.x: " + playerChar.getX() + " playerChar.y: " + playerChar.getY());
+                    //System.out.println(newMap[i][j]);
                     if (i < 0 || i >= tiledMapWidth || j < 0 || j >= tiledMapHeight) {
                         continue;
                     }
-                    if (newMap[i][j] == WALL) {
+                    else if (newMap[i][j] == WALL) {
                         stage.getBatch().draw(happyFace, i * TEXTURESIZE, j * TEXTURESIZE,
                                 TEXTURESIZE, TEXTURESIZE);
-                    } else if (newMap[i][j] == PLAYER) {
+                    }
+                    else if (newMap[i][j] == PLAYER) {
                         stage.getBatch().draw(sadFace, playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE,
                                 TEXTURESIZE, TEXTURESIZE);
-                    } else if (newMap[i][j] == ENEMY) {
+                    }
+                    else if (newMap[i][j] == ENEMY) {
                         stage.getBatch().draw(neutralFace, i * TEXTURESIZE, j * TEXTURESIZE,
                                 TEXTURESIZE, TEXTURESIZE);
-                    } else if (newMap[i][j] == EXIT) {
+                    }
+                    else if (newMap[i][j] == EXIT) {
                         stage.getBatch().draw(uglySean2, i * TEXTURESIZE, j * TEXTURESIZE,
                                 TEXTURESIZE, TEXTURESIZE);
-                    } else {
+                    }
+                    else {
                         stage.getBatch().draw(badLogic, i * TEXTURESIZE, j * TEXTURESIZE,
                                 TEXTURESIZE, TEXTURESIZE);
                     }
@@ -680,7 +658,7 @@ public class GameplayScreen implements Screen, InputProcessor {
     }
 
     public void checkOptions() {
-        if(options == true){
+        if (options == true) {
             stage.getActors().first().setVisible(true);
         }
     }
@@ -718,6 +696,9 @@ public class GameplayScreen implements Screen, InputProcessor {
 
     @Override
     public void dispose() {
+        for (int actors = 0; actors < stage.getActors().size; actors++) {
+            stage.getActors().get(actors).addAction(Actions.removeActor());
+        }
         assetManager.dispose();
         stage.dispose();
         this.dispose();
@@ -738,94 +719,108 @@ public class GameplayScreen implements Screen, InputProcessor {
 
     @Override
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
-        if(gameOver) {
+        if (gameOver) {
             this.game.setScreen(new MainMenuScreen(game));
         }
-        if(mapPressed) {
+        else if (mapPressed) {
             return false;
         }
-        worldTouch = new Vector3((int) worldTouch.x / TEXTURESIZE,
-                (int) worldTouch.y / TEXTURESIZE, 0);
+        else {
+            worldTouch = new Vector3((int) worldTouch.x / TEXTURESIZE,
+                    (int) worldTouch.y / TEXTURESIZE, 0);
 
-        //if within the bounds of the world
-        if((worldTouch.x > 0 && worldTouch.x < tiledMapWidth) &&
-                (worldTouch.y > 0 && worldTouch.y < tiledMapHeight)) {
-            //if within one tile from the player character
-            if((newMap[(int) worldTouch.x][(int) worldTouch.y] != WALL) &&
-                    ((Math.abs(worldTouch.x - playerChar.x) == 1 ||
-                    Math.abs(worldTouch.x - playerChar.x) == 0) &&
-                            (Math.abs(worldTouch.y - playerChar.y) == 1 ||
-                                    (Math.abs(worldTouch.y - playerChar.y) == 0)))) {
-                if (newMap[(int) worldTouch.x][(int) worldTouch.y] == ENEMY) {
-                    for(int i = 0; i < enemies.size; i++) {
-                        if(worldTouch.x == enemies.get(i).getX() &&
-                                worldTouch.y == enemies.get(i).getY()) {
-                            enemies.get(i).takeDamage(playerChar.ATK);
-                            if(enemies.get(i).isDead()) {
-                                newMap[enemies.get(i).getX()][enemies.get(i).getY()] = FLOOR;
-                                enemies.removeIndex(i);
+            //if within the bounds of the world
+            if ((worldTouch.x > 0 && worldTouch.x < tiledMapWidth) &&
+                    (worldTouch.y > 0 && worldTouch.y < tiledMapHeight)) {
+                //if within one tile from the player character
+                if ((newMap[(int) worldTouch.x][(int) worldTouch.y] != WALL) &&
+                        ((Math.abs(worldTouch.x - playerChar.x) == 1 ||
+                                Math.abs(worldTouch.x - playerChar.x) == 0) &&
+                                (Math.abs(worldTouch.y - playerChar.y) == 1 ||
+                                        (Math.abs(worldTouch.y - playerChar.y) == 0)))) {
+                    if (newMap[(int) worldTouch.x][(int) worldTouch.y] == ENEMY) {
+                        for (int i = 0; i < enemies.size; i++) {
+                            if (worldTouch.x == enemies.get(i).getX() &&
+                                    worldTouch.y == enemies.get(i).getY()) {
+                                enemies.get(i).takeDamage(playerChar.ATK);
+                                if (enemies.get(i).isDead()) {
+                                    newMap[enemies.get(i).getX()][enemies.get(i).getY()] = FLOOR;
+                                    enemies.removeIndex(i);
+                                }
                             }
                         }
                     }
-                }
-                else if (newMap[(int) worldTouch.x][(int) worldTouch.y] == EXIT) {
-                    recreateWorld();
-                    playerChar.setHpBeforeSave(playerChar.HP);
-                    playerHPBar.setRange(0, playerChar.HP);
-                    playerHPBar.setValue(playerChar.HP);
-                    SaveData();
-                    return true;
-                }
-                else if (newMap[(int) worldTouch.x][(int) worldTouch.y] == FLOOR) {
-                    newMap[playerChar.x][playerChar.y] = FLOOR;
-                    playerChar.x = (int) worldTouch.x;
-                    playerChar.y = (int) worldTouch.y;
-                    newMap[playerChar.x][playerChar.y] = PLAYER;
-                    updateMapDiscovered();
-                    camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
-                }
-                //initialize a goal node for pathfinding (player character)
-                goalNode = new Node();
-                goalNode.setCurrentX(playerChar.getX());
-                goalNode.setCurrentY(playerChar.getY());
-
-                //enemies move towards the player one step at a time too
-                for(int i = 0; i < enemies.size; i++) {
-                    if (enemies.size <= 0) {
-                        break;
-                    }
-
-                    //initialize a start node for pathfinding (enemies)
-                    startNode = new Node();
-                    startNode.setCurrentX(enemies.get(i).getX());
-                    startNode.setCurrentY(enemies.get(i).getY());
-
-                    //create the path from the enemy to the player
-                    //and if the enemy is beside the player or the path is null
-                    //then move onto the next enemy in the array
-                    path = aStarPathFinding(startNode, goalNode);
-                    if (path == null || path.size == 0) {
-                        continue;
-                    }
-                    else if (path.size == 1) {
-                        playerChar.takeDamage(enemies.get(i).ATK);
+                    else if (newMap[(int) worldTouch.x][(int) worldTouch.y] == EXIT) {
+                        floorLevel = floorLevel + 1;
+                        recreateWorld();
+                        playerChar.setHpBeforeSave(playerChar.HP);
+                        playerHPBar.setRange(0, playerChar.HP);
                         playerHPBar.setValue(playerChar.HP);
-                        if(playerChar.isDead()) {
-                            System.out.println("The player has died!");
-                            gameOver = true;
-                            for(int actors = 0; actors < stage.getActors().size; actors++) {
-                                stage.getActors().get(actors).addAction(Actions.removeActor());
-                            }
-                        }
-                        continue;
+                        SaveFile saveData = new SaveFile(newMap, mapDiscovered, enemies, playerChar,
+                                tiledMapWidth, tiledMapHeight, floorLevel);
+                        saveData.saveSaveData();
+                        return true;
                     }
-                    else {
-                        //move the enemy units one tile closer to the player
-                        newMap[enemies.get(i).x][enemies.get(i).y] = FLOOR;
-                        enemies.get(i).x = path.get(1).getCurrentX();
-                        enemies.get(i).y = path.get(1).getCurrentY();
-                        newMap[enemies.get(i).x][enemies.get(i).y] = ENEMY;
-                        path = null;
+                    else if (newMap[(int) worldTouch.x][(int) worldTouch.y] == FLOOR) {
+                        newMap[playerChar.x][playerChar.y] = FLOOR;
+                        playerChar.x = (int) worldTouch.x;
+                        playerChar.y = (int) worldTouch.y;
+                        newMap[playerChar.x][playerChar.y] = PLAYER;
+                        updateMapDiscovered();
+                        camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
+                    }
+                    //initialize a goal node for pathfinding (player character)
+                    goalNode = new Node();
+                    goalNode.setCurrentX(playerChar.getX());
+                    goalNode.setCurrentY(playerChar.getY());
+
+                    //enemies move towards the player one step at a time too
+                    for (int i = 0; i < enemies.size; i++) {
+                        if (enemies.size <= 0) {
+                            break;
+                        }
+
+                        //initialize a start node for pathfinding (enemies)
+                        startNode = new Node();
+                        startNode.setCurrentX(enemies.get(i).getX());
+                        startNode.setCurrentY(enemies.get(i).getY());
+
+                        //create the path from the enemy to the player
+                        //and if the enemy is beside the player or the path is null
+                        //then move onto the next enemy in the array
+                        path = aStarPathFinding(startNode, goalNode);
+                        if (path == null || path.size == 0) {
+                            continue;
+                        }
+                        else if (path.size == 1) {
+                            playerChar.takeDamage(enemies.get(i).ATK);
+                            playerHPBar.setValue(playerChar.HP);
+                            if (playerChar.isDead()) {
+                                gameOver = true;
+                                for (int actors = 0; actors < stage.getActors().size; actors++) {
+                                    stage.getActors().get(actors).addAction(Actions.removeActor());
+                                }
+                                BitmapFont font = new BitmapFont();
+                                font.getData().setScale(5, 5);
+                                Label.LabelStyle textStyle = new Label.LabelStyle(font, Color.WHITE);
+                                Label text = new Label("\t\tGame over!\n\t\tFloors cleared: " + floorLevel
+                                        + "\n\tPress anywhere to return to the main menu!", textStyle);
+                                text.setPosition(screenWidth / 2, screenHeight / 2);
+                                text.setBounds(0, 0, screenWidth, screenHeight);
+                                stage.addActor(text);
+                                SaveFile saveFiles = new SaveFile();
+                                saveFiles.deleteSaveData();
+                            }
+                            continue;
+                        }
+                        else {
+                            //move the enemy units one tile closer to the player
+                            newMap[enemies.get(i).x][enemies.get(i).y] = FLOOR;
+                            enemies.get(i).x = path.get(1).getCurrentX();
+                            enemies.get(i).y = path.get(1).getCurrentY();
+                            newMap[enemies.get(i).x][enemies.get(i).y] = ENEMY;
+                            path = null;
+                        }
                     }
                 }
             }
@@ -833,6 +828,7 @@ public class GameplayScreen implements Screen, InputProcessor {
         System.out.println("\n" + "Touch: " + worldTouch.x + " " + worldTouch.y);
         return true;
     }
+
 
     @Override
     public boolean touchDragged(int screenX, int screenY, int pointer) {
