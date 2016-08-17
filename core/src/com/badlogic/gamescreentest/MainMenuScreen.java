@@ -1,46 +1,53 @@
 package com.badlogic.gamescreentest;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.InputMultiplexer;
-import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.actions.Actions;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
 /**
  * Created by admin on 6/8/2016.
  */
-public class MainMenuScreen implements Screen, InputProcessor {
+public class MainMenuScreen implements Screen {
     final GameScreen game;
     OrthographicCamera camera;
     Stage stage;
     AssetManager assetManager;
+    SaveFile saveFile;
+    Label text;
+    Label.LabelStyle textStyle;
+    BitmapFont font;
 
-    private MainMenuBackGround backGround;
-    private com.badlogic.gamescreentest.menuButtons.MainMenuCont contButton;
-    private com.badlogic.gamescreentest.menuButtons.MainMenuQuit quitButton;
-    private com.badlogic.gamescreentest.menuButtons.MainMenuNewGame newGameButton;
+    //MainMenuBackGround backGround;
+    com.badlogic.gamescreentest.menuButtons.MainMenuCont contButton;
+    com.badlogic.gamescreentest.menuButtons.MainMenuQuit quitButton;
+    com.badlogic.gamescreentest.menuButtons.MainMenuNewGame newGameButton;
 
     boolean assetsLoaded;
-    Vector2 storeTouch;
     float cellWidth, cellHeight, screenWidth, screenHeight;
 
     public MainMenuScreen(final GameScreen gam) {
         assetsLoaded = false;
+
         screenWidth = Gdx.graphics.getWidth();
         screenHeight = Gdx.graphics.getHeight();
         cellWidth = screenWidth / 5;
         cellHeight = screenHeight / 3;
 
         game = gam;
-        camera = new OrthographicCamera();
-        stage = new Stage(new ScreenViewport(camera), game.batch);
 
+        // Load the assets needed for the game screen
         assetManager = game.assetManager;
         assetManager.load("happyface.jpg", Texture.class);
         assetManager.load("sadface.jpg", Texture.class);
@@ -53,66 +60,106 @@ public class MainMenuScreen implements Screen, InputProcessor {
         assetManager.load("ugly face sean 2.png", Texture.class);
         assetManager.load("man.png", Texture.class);
         assetManager.load("1pman.jpg", Texture.class);
+        assetManager.load("layton_movie.jpg", Texture.class);
 
-        backGround = new MainMenuBackGround(cellWidth, cellHeight);
+        // Create an orthographic camera and attach it to the stage with the game batch
+        camera = new OrthographicCamera();
+        stage = new Stage(new ScreenViewport(camera), game.batch);
+
+        // Add the main menu background to the stage
+        //backGround = new MainMenuBackGround(cellWidth, cellHeight);
+        //stage.addActor(backGround);
+
+        // Add the continue game button to the stage
         contButton = new com.badlogic.gamescreentest.menuButtons.MainMenuCont(cellWidth, cellHeight);
-        quitButton = new com.badlogic.gamescreentest.menuButtons.MainMenuQuit(cellWidth, cellHeight);
-        newGameButton = new com.badlogic.gamescreentest.menuButtons.MainMenuNewGame(cellWidth, cellHeight);
-        stage.addActor(backGround);
+        contButton.addListener(new InputListener() {
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                System.out.println("neutralface.jpg touched");
+                return true;
+            }
+
+            @Override
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                //continue from the save file
+                saveFile = new SaveFile();
+                if(assetsLoaded && saveFile.saveFilesExist()) {
+                    dispose();
+                    game.setNewGame(false);
+                    game.setScreen(new GameplayScreen(game));
+                }
+                else {
+                    font = new BitmapFont();
+                    font.getData().setScale(5, 5);
+                    textStyle = new Label.LabelStyle(font, Color.BLACK);
+                    text = new Label("No save files found!", textStyle);
+                    text.setPosition(screenWidth/3, cellHeight * 1);
+                    text.addAction(Actions.fadeOut(3));
+                    stage.addActor(text);
+                    System.out.println("No save files detected!");
+                }
+            }
+        });
         stage.addActor(contButton);
+
+        // Add the quit game button to the stage
+        quitButton = new com.badlogic.gamescreentest.menuButtons.MainMenuQuit(cellWidth, cellHeight);
+        quitButton.addListener(new InputListener() {
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                System.out.println("sadface.jpg touched");
+                return true;
+            }
+
+            @Override
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                dispose();
+                Gdx.app.exit();
+            }
+        });
         stage.addActor(quitButton);
+
+        // Add the new game button to the stage
+        newGameButton = new com.badlogic.gamescreentest.menuButtons.MainMenuNewGame(cellWidth, cellHeight);
+        newGameButton.addListener(new InputListener() {
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                System.out.println("happyface.jpg touched");
+                return true;
+            }
+
+            @Override
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                dispose();
+                game.setNewGame(true);
+                if(assetsLoaded) {
+                    game.setScreen(new GameplayScreen(game));
+                }
+            }
+        });
         stage.addActor(newGameButton);
 
-        InputMultiplexer im = new InputMultiplexer(stage, this);
-        Gdx.input.setInputProcessor(im);
+        Gdx.input.setInputProcessor(stage);
     }
 
     @Override
     public void render(float delta) {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
         if(assetManager.update()) {
             assetsLoaded = true;
         }
+
         stage.act(Gdx.graphics.getDeltaTime());
         stage.draw();
     }
 
     @Override
     public void dispose() {
-        stage.unfocusAll();
-        stage.clear();
+        for(Actor actor : stage.getActors()) {
+            actor.addAction(Actions.removeActor());
+        }
         stage.dispose();
-    }
-
-    @Override
-    public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-        //System.out.println(Gdx.input.getX() + " " + (stage.getHeight() - Gdx.input.getY()));
-        storeTouch = new Vector2(Gdx.input.getX(), (stage.getHeight() - Gdx.input.getY()));
-        return true;
-    }
-
-    @Override
-    public boolean touchUp(int screenX, int screenY, int pointer, int button) {
-
-        if(storeTouch.x >= contButton.getX() && storeTouch.x <= contButton.getX() + cellWidth
-                && storeTouch.y >= contButton.getY() && storeTouch.y <= contButton.getY() + cellHeight) {
-            System.out.println("neutralface.jpg touched");
-        }
-        else if(storeTouch.x >= quitButton.getX() && storeTouch.x <= quitButton.getX() + cellWidth
-                && storeTouch.y >= quitButton.getY() && storeTouch.y <= quitButton.getY() + cellHeight) {
-            System.out.println("sadface.jpg touched");
-            dispose();
-            Gdx.app.exit();
-        }
-        else if(storeTouch.x >= newGameButton.getX() && storeTouch.x <= newGameButton.getX() + cellWidth
-                && storeTouch.y >= newGameButton.getY() && storeTouch.y <= newGameButton.getY() + cellHeight) {
-            System.out.println("happyface.jpg touched");
-            dispose();
-            if(assetsLoaded == true) {
-                game.setScreen(new GameplayScreen(game));
-            }
-        }
-        return true;
     }
 
     @Override
@@ -138,35 +185,5 @@ public class MainMenuScreen implements Screen, InputProcessor {
     @Override
     public void resize(int width, int height) {
 
-    }
-
-    @Override
-    public boolean touchDragged(int screenX, int screenY, int pointer) {
-        return false;
-    }
-
-    @Override
-    public boolean keyDown(int keycode) {
-        return false;
-    }
-
-    @Override
-    public boolean keyUp(int keycode) {
-        return false;
-    }
-
-    @Override
-    public boolean keyTyped(char character) {
-        return false;
-    }
-
-    @Override
-    public boolean mouseMoved(int screenX, int screenY) {
-        return false;
-    }
-
-    @Override
-    public boolean scrolled(int amount) {
-        return false;
     }
 }
