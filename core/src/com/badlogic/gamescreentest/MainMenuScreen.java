@@ -29,10 +29,10 @@ public class MainMenuScreen implements Screen {
     Label.LabelStyle textStyle;
     BitmapFont font;
 
-    private MainMenuBackGround backGround;
-    private com.badlogic.gamescreentest.menuButtons.MainMenuCont contButton;
-    private com.badlogic.gamescreentest.menuButtons.MainMenuQuit quitButton;
-    private com.badlogic.gamescreentest.menuButtons.MainMenuNewGame newGameButton;
+    //MainMenuBackGround backGround;
+    com.badlogic.gamescreentest.menuButtons.MainMenuCont contButton;
+    com.badlogic.gamescreentest.menuButtons.MainMenuQuit quitButton;
+    com.badlogic.gamescreentest.menuButtons.MainMenuNewGame newGameButton;
 
     boolean assetsLoaded;
     float cellWidth, cellHeight, screenWidth, screenHeight;
@@ -46,7 +46,6 @@ public class MainMenuScreen implements Screen {
         cellHeight = screenHeight / 3;
 
         game = gam;
-        saveFile = new SaveFile();
 
         // Load the assets needed for the game screen
         assetManager = game.assetManager;
@@ -61,14 +60,15 @@ public class MainMenuScreen implements Screen {
         assetManager.load("ugly face sean 2.png", Texture.class);
         assetManager.load("man.png", Texture.class);
         assetManager.load("1pman.jpg", Texture.class);
+        assetManager.load("layton_movie.jpg", Texture.class);
 
         // Create an orthographic camera and attach it to the stage with the game batch
         camera = new OrthographicCamera();
         stage = new Stage(new ScreenViewport(camera), game.batch);
 
         // Add the main menu background to the stage
-        backGround = new MainMenuBackGround(cellWidth, cellHeight);
-        stage.addActor(backGround);
+        //backGround = new MainMenuBackGround(cellWidth, cellHeight);
+        //stage.addActor(backGround);
 
         // Add the continue game button to the stage
         contButton = new com.badlogic.gamescreentest.menuButtons.MainMenuCont(cellWidth, cellHeight);
@@ -82,6 +82,7 @@ public class MainMenuScreen implements Screen {
             @Override
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                 //continue from the save file
+                saveFile = new SaveFile();
                 if(assetsLoaded && saveFile.saveFilesExist()) {
                     dispose();
                     game.setNewGame(false);

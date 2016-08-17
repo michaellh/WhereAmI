@@ -1,9 +1,5 @@
 package com.badlogic.gamescreentest;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.scenes.scene2d.ui.Tree;
-import com.badlogic.gdx.utils.Array;
-
 /**
  * Created by admin on 7/11/2016.
  */

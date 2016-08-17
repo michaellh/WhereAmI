@@ -30,12 +30,12 @@ public class SaveFile {
         savePlayer = player;
         mapWidth = tiledMapWidth;
         mapHeight = tiledMapHeight;
+        saveFloorLevel = level;
     }
 
     public boolean fileExists(String file) {
-        FileHandle file1 = Gdx.files.local(file);
-        boolean fileExists = file1.exists();
-        if(fileExists) {
+        FileHandle saveFile = Gdx.files.local(file);
+        if(saveFile.exists()) {
             return true;
         }
         return false;
@@ -281,7 +281,7 @@ public class SaveFile {
             int counter = 0;
             for (int i = 0; i < enemySize; i++) {
                 int x = (int) Float.parseFloat(fileTextSplit[counter]);
-                int y = (int) Float.parseFloat(fileTextSplit[counter + 1]);;
+                int y = (int) Float.parseFloat(fileTextSplit[counter + 1]);
                 int HP = (int) Float.parseFloat(fileTextSplit[counter + 2]);
                 int ATK = (int) Float.parseFloat(fileTextSplit[counter + 3]);
                 int DEF = (int) Float.parseFloat(fileTextSplit[counter + 4]);

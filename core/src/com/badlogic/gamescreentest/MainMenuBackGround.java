@@ -1,9 +1,7 @@
 package com.badlogic.gamescreentest;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
-import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 
 /**
@@ -24,8 +22,9 @@ public class MainMenuBackGround extends Actor {
         height = cellHeight * 3;
     }
 
+    /*
     @Override
     public void draw(Batch batch, float parentAlpha) {
         batch.draw(img, x, y, width, height);
-    }
+    }*/
 }

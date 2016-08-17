@@ -1,5 +1,6 @@
 package com.badlogic.gamescreentest;
 
+import com.badlogic.gamescreentest.headsUP.MainMenuButton;
 import com.badlogic.gamescreentest.headsUP.Map.MapExit;
 import com.badlogic.gamescreentest.headsUP.Map.MapSeePlayer;
 import com.badlogic.gamescreentest.headsUP.MapHUD;
@@ -9,7 +10,6 @@ import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.assets.AssetManager;
-import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -25,6 +25,7 @@ import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.utils.SpriteDrawable;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.Timer;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
 import java.util.ArrayList;
@@ -41,11 +42,12 @@ public class GameplayScreen implements Screen, InputProcessor {
     Stage stage;
     AssetManager assetManager;
     Texture happyFace, neutralFace, sadFace, badLogic, uglySean, humBird,
-            objection, chinPo, uglySean2, opm, man;
+            objection, chinPo, uglySean2, opm, man, layton;
     Random rand;
 
     gameOptions optButton;
     MapHUD mapButton;
+    MainMenuButton menuButton;
     MapExit mapExit;
     MapSeePlayer mapSeePlayer;
     HPBarStyle hpBarStyle;
@@ -108,6 +110,7 @@ public class GameplayScreen implements Screen, InputProcessor {
         uglySean2 = assetManager.get("ugly face sean 2.png", Texture.class);
         opm = assetManager.get("1pman.jpg", Texture.class);
         man = assetManager.get("man.png", Texture.class);
+        layton = assetManager.get("layton_movie.jpg", Texture.class);
 
         if (this.game.getNewGame()) {
             SaveFile saveFile = new SaveFile();
@@ -145,6 +148,26 @@ public class GameplayScreen implements Screen, InputProcessor {
         playerHPBar.setPosition(0, 7 * cellHeight + spriteBack.getHeight());
         playerHPBar.setValue(playerChar.HP);
         stage.addActor(playerHPBar);
+
+        // Add the main menu button to the stage
+        menuButton = new MainMenuButton(layton, cellWidth, cellHeight);
+        menuButton.setBounds(cellWidth * 7, cellHeight * 7, layton.getWidth(), layton.getHeight());
+        menuButton.addListener(new InputListener() {
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                System.out.println("menu button pressed");
+                return true;
+            }
+
+            @Override
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                for (int actors = 0; actors < stage.getActors().size; actors++) {
+                    stage.getActors().get(actors).addAction(Actions.removeActor());
+                }
+                game.setScreen(new MainMenuScreen(game));
+            }
+        });
+        stage.addActor(menuButton);
 
         // Add the map button to the stage
         mapButton = new MapHUD(chinPo, cellWidth, cellHeight);
@@ -259,9 +282,10 @@ public class GameplayScreen implements Screen, InputProcessor {
             ranPosX = randInt(1, (tiledMapWidth - 1));
             ranPosY = randInt(1, (tiledMapHeight - 1));
         }
-        //newMap = floodFill(ogMap, ranPosX, ranPosY, 0, 1);
+        //floodFill(ogMap, ranPosX, ranPosY, 0, 1);
+        newMap = horizontalBlanking(ogMap);
 
-        newMap = mapIter1(ogMap);
+        newMap = mapIter1(newMap);
         newMap = mapIter2(newMap);
         newMap = mapIter2(newMap);
         newMap = mapIter2(newMap);
@@ -274,30 +298,46 @@ public class GameplayScreen implements Screen, InputProcessor {
         return newMap;
     }
 
-    public int[][] floodFill(int[][] node, int x, int y, int target, int replace) {
+    public int[][] horizontalBlanking(int[][] map) {
+        for(int i = 0; i < tiledMapWidth; i++) {
+            for(int j = (tiledMapHeight / 2) - 1; j < (tiledMapHeight / 2) + 1; j++) {
+                map[i][j] = FLOOR;
+            }
+        }
+        return map;
+    }
+
+    /*
+    public void floodFill(int[][] node, int x, int y, int target, int replace) {
+        // if the tile read is outside of tilemapwidth and tilemapheight then return
         if (x <= 0 || x >= tiledMapWidth) {
-            return node;
+            return;
         }
         if (y <= 0 || y >= tiledMapHeight) {
-            return node;
+            return;
         }
-        if (target == replace) {
-            return node;
-        }
+        // if the tile read isn't a floor tile then return
         if (node[x][y] != target) {
-            return node;
+            return;
         }
+        // if the tile read is a floor and has already been checked then return
+        if (target == replace) {
+            return;
+        }
+        // otherwise replace the floor tile at that xy position as read
         node[x][y] = replace;
-        floodFill(node, x--, y++, target, replace); //top left
-        floodFill(node, x, y--, target, replace);   //bot
-        floodFill(node, x, y++, target, replace);   //top
-        floodFill(node, x++, y++, target, replace); //top right
-        floodFill(node, x--, y--, target, replace); //bot left
-        floodFill(node, x++, y--, target, replace); //bot right
-        floodFill(node, x--, y, target, replace);   //left
-        floodFill(node, x++, y, target, replace);   //right
-        return node;
+        // now check the surrounding tiles to see if they have been read or not
+        floodFill(node, x - 1, y - 1, target, replace); //bot left
+        floodFill(node, x - 1, y, target, replace);   //left
+        floodFill(node, x - 1, y + 1, target, replace); //top left
+        floodFill(node, x, y - 1, target, replace);   //bot
+        floodFill(node, x, y + 1, target, replace);   //top
+        floodFill(node, x + 1, y - 1, target, replace); //bot right
+        floodFill(node, x + 1, y, target, replace);   //right
+        floodFill(node, x + 1, y + 1, target, replace); //top right
+        return;
     }
+    */
 
     public int[][] mapIter1(int[][] oldMap) {
         wallCount = 0;
@@ -373,8 +413,8 @@ public class GameplayScreen implements Screen, InputProcessor {
     Outputs: None
      */
     public void recreateWorld() {
-        tiledMapWidth = randInt(50, 100);
-        tiledMapHeight = randInt(50, 100);
+        tiledMapWidth = randInt(10 + (5 * floorLevel), 10 + (10 * floorLevel));
+        tiledMapHeight = randInt(5 + (5 * floorLevel), 10 + (10 * floorLevel));
         mapDiscovered = new ArrayList<Vector2>();
 
         //reinitialize the player character and enemy stats
@@ -382,7 +422,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                 0, randInt(0, 10));
         //initialize a random-sized array of standard enemies and their stats
         enemies = new Array<standardEnemy>();
-        for (int i = 0; i < randInt(2, 3); i++) {
+        for (int i = 0; i < (1 + floorLevel); i++) {
             enemies.add(new standardEnemy(randInt(10, 15), 1,
                     0, randInt(0, 10)));
         }
@@ -562,8 +602,8 @@ public class GameplayScreen implements Screen, InputProcessor {
             mapDiscovered.add(new Vector2(playerChar.getX(), playerChar.getY()));
         }
         int mapDiscoveredSize = mapDiscovered.size();
-        for (int i = (playerChar.getX() - 2); i <= (playerChar.getX() + 2); i++) {
-            for (int j = (playerChar.getY() - 2); j <= (playerChar.getY() + 2); j++) {
+        for (int i = (playerChar.getX() - 4); i <= (playerChar.getX() + 4); i++) {
+            for (int j = (playerChar.getY() - 4); j <= (playerChar.getY() + 4); j++) {
                 if ((i >= 0 && i <= (tiledMapWidth - 1)) &&
                         (j >= 0 && j <= (tiledMapHeight - 1))) {
                     mapTileDiscovered = new Vector2(i, j);
@@ -573,9 +613,8 @@ public class GameplayScreen implements Screen, InputProcessor {
                             tileDiscovered = true;
                         }
                     }
-                    if (tileDiscovered == true) {
+                    if (tileDiscovered) {
                         tileDiscovered = false;
-                        continue;
                     } else {
                         mapDiscovered.add(mapTileDiscovered);
                     }
@@ -620,13 +659,10 @@ public class GameplayScreen implements Screen, InputProcessor {
             }
         }
         else {
-            for (int i = (playerChar.getX() - 8); i < (playerChar.getX() + 9); i++) {
-                for (int j = (playerChar.getY() - 5); j < (playerChar.getY() + 6); j++) {
-                    //System.out.println("i: " + i + " j: " + j);
-                    //System.out.println("playerChar.x: " + playerChar.getX() + " playerChar.y: " + playerChar.getY());
-                    //System.out.println(newMap[i][j]);
+            for (int i = (playerChar.getX() - (8 + floorLevel)); i < (playerChar.getX() + (9 - floorLevel)); i++) {
+                for (int j = (playerChar.getY() - (5 + floorLevel)); j < (playerChar.getY() + (6 - floorLevel)); j++) {
                     if (i < 0 || i >= tiledMapWidth || j < 0 || j >= tiledMapHeight) {
-                        continue;
+                        // continue
                     }
                     else if (newMap[i][j] == WALL) {
                         stage.getBatch().draw(happyFace, i * TEXTURESIZE, j * TEXTURESIZE,
@@ -657,11 +693,12 @@ public class GameplayScreen implements Screen, InputProcessor {
         stage.draw();
     }
 
+    /*
     public void checkOptions() {
         if (options == true) {
             stage.getActors().first().setVisible(true);
         }
-    }
+    }*/
 
     /*
     Description: Generates a pseudo-random integer between two input integers
@@ -670,8 +707,7 @@ public class GameplayScreen implements Screen, InputProcessor {
     Outputs: int
      */
     public int randInt(int min, int max) {
-        int randNum = rand.nextInt((max - min) + 1) + min;
-        return randNum;
+        return rand.nextInt((max - min) + 1) + min;
     }
 
     @Override
@@ -701,7 +737,6 @@ public class GameplayScreen implements Screen, InputProcessor {
         }
         assetManager.dispose();
         stage.dispose();
-        this.dispose();
     }
 
     @Override
@@ -726,105 +761,109 @@ public class GameplayScreen implements Screen, InputProcessor {
             return false;
         }
         else {
-            worldTouch = new Vector3((int) worldTouch.x / TEXTURESIZE,
-                    (int) worldTouch.y / TEXTURESIZE, 0);
-
-            //if within the bounds of the world
-            if ((worldTouch.x > 0 && worldTouch.x < tiledMapWidth) &&
-                    (worldTouch.y > 0 && worldTouch.y < tiledMapHeight)) {
-                //if within one tile from the player character
-                if ((newMap[(int) worldTouch.x][(int) worldTouch.y] != WALL) &&
-                        ((Math.abs(worldTouch.x - playerChar.x) == 1 ||
-                                Math.abs(worldTouch.x - playerChar.x) == 0) &&
-                                (Math.abs(worldTouch.y - playerChar.y) == 1 ||
-                                        (Math.abs(worldTouch.y - playerChar.y) == 0)))) {
-                    if (newMap[(int) worldTouch.x][(int) worldTouch.y] == ENEMY) {
-                        for (int i = 0; i < enemies.size; i++) {
-                            if (worldTouch.x == enemies.get(i).getX() &&
-                                    worldTouch.y == enemies.get(i).getY()) {
-                                enemies.get(i).takeDamage(playerChar.ATK);
-                                if (enemies.get(i).isDead()) {
-                                    newMap[enemies.get(i).getX()][enemies.get(i).getY()] = FLOOR;
-                                    enemies.removeIndex(i);
+            float delay = 0.03f; // seconds
+            Timer.schedule(new Timer.Task(){
+                @Override
+                public void run() {
+                    worldTouch = new Vector3((int) worldTouch.x / TEXTURESIZE,
+                            (int) worldTouch.y / TEXTURESIZE, 0);
+                    //if within the bounds of the world
+                    if ((worldTouch.x > 0 && worldTouch.x < tiledMapWidth) &&
+                            (worldTouch.y > 0 && worldTouch.y < tiledMapHeight)) {
+                        //if within one tile from the player character
+                        if ((newMap[(int) worldTouch.x][(int) worldTouch.y] != WALL) &&
+                                ((Math.abs(worldTouch.x - playerChar.x) == 1 ||
+                                        Math.abs(worldTouch.x - playerChar.x) == 0) &&
+                                        (Math.abs(worldTouch.y - playerChar.y) == 1 ||
+                                                (Math.abs(worldTouch.y - playerChar.y) == 0)))) {
+                            if (newMap[(int) worldTouch.x][(int) worldTouch.y] == ENEMY) {
+                                for (int i = 0; i < enemies.size; i++) {
+                                    if (worldTouch.x == enemies.get(i).getX() &&
+                                            worldTouch.y == enemies.get(i).getY()) {
+                                        enemies.get(i).takeDamage(playerChar.ATK);
+                                        if (enemies.get(i).isDead()) {
+                                            newMap[enemies.get(i).getX()][enemies.get(i).getY()] = FLOOR;
+                                            enemies.removeIndex(i);
+                                        }
+                                    }
                                 }
                             }
-                        }
-                    }
-                    else if (newMap[(int) worldTouch.x][(int) worldTouch.y] == EXIT) {
-                        floorLevel = floorLevel + 1;
-                        recreateWorld();
-                        playerChar.setHpBeforeSave(playerChar.HP);
-                        playerHPBar.setRange(0, playerChar.HP);
-                        playerHPBar.setValue(playerChar.HP);
-                        SaveFile saveData = new SaveFile(newMap, mapDiscovered, enemies, playerChar,
-                                tiledMapWidth, tiledMapHeight, floorLevel);
-                        saveData.saveSaveData();
-                        return true;
-                    }
-                    else if (newMap[(int) worldTouch.x][(int) worldTouch.y] == FLOOR) {
-                        newMap[playerChar.x][playerChar.y] = FLOOR;
-                        playerChar.x = (int) worldTouch.x;
-                        playerChar.y = (int) worldTouch.y;
-                        newMap[playerChar.x][playerChar.y] = PLAYER;
-                        updateMapDiscovered();
-                        camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
-                    }
-                    //initialize a goal node for pathfinding (player character)
-                    goalNode = new Node();
-                    goalNode.setCurrentX(playerChar.getX());
-                    goalNode.setCurrentY(playerChar.getY());
-
-                    //enemies move towards the player one step at a time too
-                    for (int i = 0; i < enemies.size; i++) {
-                        if (enemies.size <= 0) {
-                            break;
-                        }
-
-                        //initialize a start node for pathfinding (enemies)
-                        startNode = new Node();
-                        startNode.setCurrentX(enemies.get(i).getX());
-                        startNode.setCurrentY(enemies.get(i).getY());
-
-                        //create the path from the enemy to the player
-                        //and if the enemy is beside the player or the path is null
-                        //then move onto the next enemy in the array
-                        path = aStarPathFinding(startNode, goalNode);
-                        if (path == null || path.size == 0) {
-                            continue;
-                        }
-                        else if (path.size == 1) {
-                            playerChar.takeDamage(enemies.get(i).ATK);
-                            playerHPBar.setValue(playerChar.HP);
-                            if (playerChar.isDead()) {
-                                gameOver = true;
-                                for (int actors = 0; actors < stage.getActors().size; actors++) {
-                                    stage.getActors().get(actors).addAction(Actions.removeActor());
-                                }
-                                BitmapFont font = new BitmapFont();
-                                font.getData().setScale(5, 5);
-                                Label.LabelStyle textStyle = new Label.LabelStyle(font, Color.WHITE);
-                                Label text = new Label("\tGame over!\n\tFloors cleared: " + floorLevel
-                                        + "\nPress anywhere to return to the main menu!", textStyle);
-                                text.setPosition(screenWidth / 2, screenHeight / 2);
-                                stage.addActor(text);
-                                SaveFile saveFiles = new SaveFile();
-                                saveFiles.deleteSaveData();
+                            else if (newMap[(int) worldTouch.x][(int) worldTouch.y] == EXIT) {
+                                floorLevel = floorLevel + 1;
+                                recreateWorld();
+                                playerChar.setHpBeforeSave(playerChar.HP);
+                                playerHPBar.setRange(0, playerChar.HP);
+                                playerHPBar.setValue(playerChar.HP);
+                                SaveFile saveData = new SaveFile(newMap, mapDiscovered, enemies, playerChar,
+                                        tiledMapWidth, tiledMapHeight, floorLevel);
+                                saveData.saveSaveData();
+                                //return true;
                             }
-                            continue;
-                        }
-                        else {
-                            //move the enemy units one tile closer to the player
-                            newMap[enemies.get(i).x][enemies.get(i).y] = FLOOR;
-                            enemies.get(i).x = path.get(1).getCurrentX();
-                            enemies.get(i).y = path.get(1).getCurrentY();
-                            newMap[enemies.get(i).x][enemies.get(i).y] = ENEMY;
-                            path = null;
+                            else if (newMap[(int) worldTouch.x][(int) worldTouch.y] == FLOOR) {
+                                newMap[playerChar.x][playerChar.y] = FLOOR;
+                                playerChar.x = (int) worldTouch.x;
+                                playerChar.y = (int) worldTouch.y;
+                                newMap[playerChar.x][playerChar.y] = PLAYER;
+                                updateMapDiscovered();
+                                camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
+                            }
+                            //initialize a goal node for pathfinding (player character)
+                            goalNode = new Node();
+                            goalNode.setCurrentX(playerChar.getX());
+                            goalNode.setCurrentY(playerChar.getY());
+
+                            //enemies move towards the player one step at a time too
+                            for (int i = 0; i < enemies.size; i++) {
+                                if (enemies.size <= 0) {
+                                    break;
+                                }
+
+                                //initialize a start node for pathfinding (enemies)
+                                startNode = new Node();
+                                startNode.setCurrentX(enemies.get(i).getX());
+                                startNode.setCurrentY(enemies.get(i).getY());
+
+                                //create the path from the enemy to the player
+                                //and if the enemy is beside the player or the path is null
+                                //then move onto the next enemy in the array
+                                path = aStarPathFinding(startNode, goalNode);
+                                if (path == null || path.size == 0) {
+                                    // continue
+                                }
+                                else if (path.size == 1) {
+                                    playerChar.takeDamage(enemies.get(i).ATK);
+                                    playerHPBar.setValue(playerChar.HP);
+                                    if (playerChar.isDead()) {
+                                        gameOver = true;
+                                        for (int actors = 0; actors < stage.getActors().size; actors++) {
+                                            stage.getActors().get(actors).addAction(Actions.removeActor());
+                                        }
+                                        BitmapFont font = new BitmapFont();
+                                        font.getData().setScale(5, 5);
+                                        Label.LabelStyle textStyle = new Label.LabelStyle(font, Color.WHITE);
+                                        Label text = new Label("Game over!\nFloors cleared: " + floorLevel
+                                                + "\nPress anywhere to return to the main menu!", textStyle);
+                                        text.setPosition(cellWidth, cellHeight * 3);
+                                        stage.addActor(text);
+                                        SaveFile saveFiles = new SaveFile();
+                                        saveFiles.deleteSaveData();
+                                    }
+                                }
+                                else {
+                                    //move the enemy units one tile closer to the player
+                                    newMap[enemies.get(i).x][enemies.get(i).y] = FLOOR;
+                                    enemies.get(i).x = path.get(1).getCurrentX();
+                                    enemies.get(i).y = path.get(1).getCurrentY();
+                                    newMap[enemies.get(i).x][enemies.get(i).y] = ENEMY;
+                                    path = null;
+                                }
+                            }
                         }
                     }
                 }
-            }
+            }, delay);
         }
-        System.out.println("\n" + "Touch: " + worldTouch.x + " " + worldTouch.y);
+        //System.out.println("\n" + "Touch: " + worldTouch.x + " " + worldTouch.y);
         return true;
     }
 
