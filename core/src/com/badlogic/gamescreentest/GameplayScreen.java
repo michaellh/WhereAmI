@@ -182,7 +182,7 @@ public class GameplayScreen implements Screen, InputProcessor {
             @Override
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                 System.out.println("map touched up");
-                // Temporarily disable the HP bar, map mode button, and the options button
+                // Temporarily disable the HP bar, map mode button, options button, and menu button
                 for (int i = 0; i < stage.getActors().size; i++) {
                     stage.getActors().get(i).setVisible(false);
                 }
@@ -212,13 +212,15 @@ public class GameplayScreen implements Screen, InputProcessor {
                         int mapFindPlayer = stage.getActors().indexOf(mapSeePlayer, true);
                         stage.getActors().get(mapFindPlayer).setVisible(false);
 
-                        // Enables the HP bar, map mode button, and the options button
+                        // Enables the HP bar, map mode button, options button, and menu button
                         int mapButtonIndex = stage.getActors().indexOf(mapButton, true);
                         stage.getActors().get(mapButtonIndex).setVisible(true);
                         int optButtonIndex = stage.getActors().indexOf(optButton, true);
                         stage.getActors().get(optButtonIndex).setVisible(true);
                         int hpBarIndex = stage.getActors().indexOf(playerHPBar, true);
                         stage.getActors().get(hpBarIndex).setVisible(true);
+                        int menuButtonIndex = stage.getActors().indexOf(menuButton, true);
+                        stage.getActors().get(menuButtonIndex).setVisible(true);
                     }
                 });
                 // Adds a see player button in map mode
