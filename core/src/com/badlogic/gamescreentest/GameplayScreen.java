@@ -29,6 +29,7 @@ import com.badlogic.gdx.utils.Timer;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.PriorityQueue;
 import java.util.Random;
 
@@ -268,25 +269,10 @@ public class GameplayScreen implements Screen, InputProcessor {
     }
 
     public int[][] createWorld() {
-        ogMap = new int[tiledMapWidth][tiledMapHeight];
-
-        for (int i = 0; i < tiledMapWidth; i++) {
-            for (int j = 0; j < tiledMapHeight; j++) {
-                if (randInt(0, 100) < 40) {
-                    ogMap[i][j] = WALL;
-                }
-            }
+        int[][] newMap = createMap();
+        while(newMap == null) {
+            newMap = createMap();
         }
-
-        ranPosX = randInt(1, (tiledMapWidth - 1));
-        ranPosY = randInt(1, (tiledMapHeight - 1));
-        while (ogMap[ranPosX][ranPosY] != FLOOR) {
-            ranPosX = randInt(1, (tiledMapWidth - 1));
-            ranPosY = randInt(1, (tiledMapHeight - 1));
-        }
-        //floodFill(ogMap, ranPosX, ranPosY, 0, 1);
-        newMap = horizontalBlanking(ogMap);
-
         newMap = mapIter1(newMap);
         newMap = mapIter2(newMap);
         newMap = mapIter2(newMap);
@@ -300,16 +286,56 @@ public class GameplayScreen implements Screen, InputProcessor {
         return newMap;
     }
 
-    public int[][] horizontalBlanking(int[][] map) {
-        for(int i = 0; i < tiledMapWidth; i++) {
-            for(int j = (tiledMapHeight / 2) - 1; j < (tiledMapHeight / 2) + 1; j++) {
-                map[i][j] = FLOOR;
+    public int[][] createMap() {
+        ogMap = new int[tiledMapWidth][tiledMapHeight];
+        int mapWallCount = 0;
+
+        for (int i = 0; i < tiledMapHeight; i++) {
+            for (int j = 0; j < tiledMapWidth; j++) {
+                if (randInt(0, 100) < 40) {
+                    ogMap[j][i] = WALL;
+                    mapWallCount = mapWallCount + 1;
+                }
+                System.out.print(ogMap[j][i]);
             }
+            System.out.println();
         }
-        return map;
+        System.out.println("----------------------------------------------");
+        int[][] copyOgMap = deepCopyArray(ogMap);
+
+        ranPosX = randInt(1, (tiledMapWidth - 1));
+        ranPosY = randInt(1, (tiledMapHeight - 1));
+        while (ogMap[ranPosX][ranPosY] != FLOOR) {
+            ranPosX = randInt(1, (tiledMapWidth - 1));
+            ranPosY = randInt(1, (tiledMapHeight - 1));
+        }
+        int floodMapCount = 0;
+        floodFill(copyOgMap, ranPosX, ranPosY, 0, 1);
+        for (int i = 0; i < tiledMapHeight; i++) {
+            for (int j = 0; j < tiledMapWidth; j++) {
+                System.out.print(copyOgMap[j][i]);
+            }
+            System.out.println();
+        }
+        System.out.println("----------------------------------------------");
+        for (int i = 0; i < tiledMapHeight; i++) {
+            for (int j = 0; j < tiledMapWidth; j++) {
+                if(copyOgMap[j][i] == 1) {
+                    floodMapCount = floodMapCount + 1;
+                }
+                System.out.print(ogMap[j][i]);
+            }
+            System.out.println();
+        }
+
+        float floorCovered = ((floodMapCount - mapWallCount)/ (float)(tiledMapWidth * tiledMapHeight));
+        System.out.println(floorCovered);
+        if(floorCovered > 0.45) {
+            return ogMap;
+        }
+        return null;
     }
 
-    /*
     public void floodFill(int[][] node, int x, int y, int target, int replace) {
         // if the tile read is outside of tilemapwidth and tilemapheight then return
         if (x <= 0 || x >= tiledMapWidth) {
@@ -339,7 +365,14 @@ public class GameplayScreen implements Screen, InputProcessor {
         floodFill(node, x + 1, y + 1, target, replace); //top right
         return;
     }
-    */
+
+    public int[][] deepCopyArray(int[][] original) {
+        int[][] copy = new int[original.length][];
+        for (int i = 0; i < original.length; i++) {
+            copy[i] = Arrays.copyOf(original[i], original[i].length);
+        }
+        return copy;
+    }
 
     public int[][] mapIter1(int[][] oldMap) {
         wallCount = 0;
@@ -661,8 +694,8 @@ public class GameplayScreen implements Screen, InputProcessor {
             }
         }
         else {
-            for (int i = (playerChar.getX() - (8 + floorLevel)); i < (playerChar.getX() + (9 - floorLevel)); i++) {
-                for (int j = (playerChar.getY() - (5 + floorLevel)); j < (playerChar.getY() + (6 - floorLevel)); j++) {
+            for (int i = (playerChar.getX() - (8)); i < (playerChar.getX() + (9)); i++) {
+                for (int j = (playerChar.getY() - (5)); j < (playerChar.getY() + (6)); j++) {
                     if (i < 0 || i >= tiledMapWidth || j < 0 || j >= tiledMapHeight) {
                         // continue
                     }
