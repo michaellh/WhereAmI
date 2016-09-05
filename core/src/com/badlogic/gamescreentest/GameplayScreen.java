@@ -282,48 +282,54 @@ public class GameplayScreen implements Screen, InputProcessor {
         newMap = mapIter1(newMap);
         newMap = mapIter1(newMap);
         newMap = mapIter1(newMap);
-        newMap = mapBorders(newMap);
         return newMap;
     }
 
     public int[][] createMap() {
         ogMap = new int[tiledMapWidth][tiledMapHeight];
-        int mapWallCount = 0;
 
-        for (int i = 0; i < tiledMapHeight; i++) {
+        // populate the map with walls
+        int mapWallCount = 0;
+        for (int i = tiledMapHeight - 1; i > 0; i--) {
             for (int j = 0; j < tiledMapWidth; j++) {
                 if (randInt(0, 100) < 40) {
                     ogMap[j][i] = WALL;
+                    System.out.print("*");
                     mapWallCount = mapWallCount + 1;
                 }
-                System.out.print(ogMap[j][i]);
+                else {
+                    System.out.print("!");
+                }
+                //System.out.print(ogMap[j][i]);
             }
             System.out.println();
         }
         System.out.println("----------------------------------------------");
+
+        // deep copy the original map
         int[][] copyOgMap = deepCopyArray(ogMap);
 
+        // find a floor tile and use floodfill to determine the size
+        // of the open space around the floor tile
         ranPosX = randInt(1, (tiledMapWidth - 1));
         ranPosY = randInt(1, (tiledMapHeight - 1));
         while (ogMap[ranPosX][ranPosY] != FLOOR) {
             ranPosX = randInt(1, (tiledMapWidth - 1));
             ranPosY = randInt(1, (tiledMapHeight - 1));
         }
+        System.out.println("Random pt: " + ranPosX + ", " + ranPosY);
         int floodMapCount = 0;
         floodFill(copyOgMap, ranPosX, ranPosY, 0, 1);
-        for (int i = 0; i < tiledMapHeight; i++) {
+        for (int i = tiledMapHeight - 1; i > 0; i--) {
             for (int j = 0; j < tiledMapWidth; j++) {
-                System.out.print(copyOgMap[j][i]);
-            }
-            System.out.println();
-        }
-        System.out.println("----------------------------------------------");
-        for (int i = 0; i < tiledMapHeight; i++) {
-            for (int j = 0; j < tiledMapWidth; j++) {
-                if(copyOgMap[j][i] == 1) {
+                if(copyOgMap[j][i] == WALL) {
                     floodMapCount = floodMapCount + 1;
+                    System.out.print("*");
                 }
-                System.out.print(ogMap[j][i]);
+                else if(copyOgMap[j][i] == FLOOR) {
+                    System.out.print("!");
+                }
+                //System.out.print(copyOgMap[j][i]);
             }
             System.out.println();
         }
@@ -429,18 +435,6 @@ public class GameplayScreen implements Screen, InputProcessor {
         return newMap;
     }
 
-    public int[][] mapBorders(int[][] map) {
-        for (int i = 0; i < tiledMapWidth; i++) {
-            map[i][0] = WALL;
-            map[i][tiledMapHeight - 1] = WALL;
-        }
-        for (int j = 0; j < tiledMapHeight; j++) {
-            map[0][j] = WALL;
-            map[tiledMapWidth - 1][j] = WALL;
-        }
-        return map;
-    }
-
     /*
     Description: creates a new world that's randomly populated
     Function: recreateWorld()
@@ -492,6 +486,29 @@ public class GameplayScreen implements Screen, InputProcessor {
         }
         newMap[ranPosX][ranPosY] = EXIT;
         System.out.println("EXIT: " + ranPosX + " " + ranPosY);
+
+        System.out.println("----------------------------------------------");
+        for (int i = tiledMapHeight - 1; i > 0; i--) {
+            for (int j = 0; j < tiledMapWidth; j++) {
+                if(newMap[j][i] == FLOOR) {
+                    System.out.print("!");
+                }
+                else if(newMap[j][i] == WALL) {
+                    System.out.print("*");
+                }
+                else if(newMap[j][i] == ENEMY) {
+                    System.out.print("E");
+                }
+                else if(newMap[j][i] == PLAYER) {
+                    System.out.print("P");
+                }
+                else if(newMap[j][i] == EXIT) {
+                    System.out.print("X");
+                }
+                //System.out.print(newMap[j][i]);
+            }
+            System.out.println();
+        }
     }
 
     /*
@@ -578,6 +595,7 @@ public class GameplayScreen implements Screen, InputProcessor {
     public Array<Node> expand(Node node) {
         Array<Node> neighbours = new Array<Node>();
 
+        // 3x3 surroundings
         for (int x = -1; x < 2; x++) {
             for (int y = -1; y < 2; y++) {
                 if ((x == 0) && (y == 0)) {
@@ -586,6 +604,12 @@ public class GameplayScreen implements Screen, InputProcessor {
 
                 //if a neighbour isn't within the bounds of the world/isn't a floor,
                 //don't initialize and store them into the neighbours array
+                if(((x + node.getCurrentX()) >= tiledMapWidth) ||
+                        ((x + node.getCurrentX()) < 0) ||
+                        ((y + node.getCurrentY()) >= tiledMapHeight) ||
+                        ((y + node.getCurrentY()) < 0)) {
+                    continue;
+                }
                 if (newMap[x + node.getCurrentX()][y + node.getCurrentY()] == FLOOR ||
                         newMap[x + node.getCurrentX()][y + node.getCurrentY()] == PLAYER) {
                     //create a new Node object and store it into neighbours
@@ -594,6 +618,30 @@ public class GameplayScreen implements Screen, InputProcessor {
                     adjNode.setCurrentY(y + node.getCurrentY());
                     neighbours.add(adjNode);
                 }
+
+                // test code to see if the enemies have trouble following the player
+                /*
+                if(((x + node.getCurrentX()) >= tiledMapWidth) ||
+                        ((x + node.getCurrentX()) < 0) ||
+                        ((y + node.getCurrentY()) >= tiledMapHeight) ||
+                        ((y + node.getCurrentY()) < 0)) {
+                    continue;
+                }
+                try {
+                    if (newMap[x + node.getCurrentX()][y + node.getCurrentY()] == FLOOR ||
+                            newMap[x + node.getCurrentX()][y + node.getCurrentY()] == PLAYER) {
+                        //create a new Node object and store it into neighbours
+                        Node adjNode = new Node();
+                        adjNode.setCurrentX(x + node.getCurrentX());
+                        adjNode.setCurrentY(y + node.getCurrentY());
+                        neighbours.add(adjNode);
+                    }
+                }
+                catch (ArrayIndexOutOfBoundsException e) {
+                    System.out.println("player x: " + playerChar.getX() + " y: " + playerChar.getY());
+                    System.out.println("x: " + (x + node.getCurrentX()) + " y: " + (y + node.getCurrentY()));
+                }
+                */
             }
         }
         return neighbours;
@@ -803,8 +851,8 @@ public class GameplayScreen implements Screen, InputProcessor {
                     worldTouch = new Vector3((int) worldTouch.x / TEXTURESIZE,
                             (int) worldTouch.y / TEXTURESIZE, 0);
                     //if within the bounds of the world
-                    if ((worldTouch.x > 0 && worldTouch.x < tiledMapWidth) &&
-                            (worldTouch.y > 0 && worldTouch.y < tiledMapHeight)) {
+                    if ((worldTouch.x >= 0 && worldTouch.x <= tiledMapWidth) &&
+                            (worldTouch.y >= 0 && worldTouch.y <= tiledMapHeight)) {
                         //if within one tile from the player character
                         if ((newMap[(int) worldTouch.x][(int) worldTouch.y] != WALL) &&
                                 ((Math.abs(worldTouch.x - playerChar.x) == 1 ||
