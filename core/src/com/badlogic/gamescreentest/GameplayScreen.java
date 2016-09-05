@@ -276,15 +276,15 @@ public class GameplayScreen implements Screen, InputProcessor {
             for (int j = 0; j < tiledMapWidth; j++) {
                 if (randInt(0, 100) < 40) {
                     newMap[j][i] = WALL;
-                    System.out.print("*");
+                    //System.out.print("*");
                 }
                 else {
-                    System.out.print("!");
+                    //System.out.print("!");
                 }
             }
-            System.out.println();
+            //System.out.println();
         }
-        System.out.println("----------------------------------------------");
+        //System.out.println("----------------------------------------------");
 
         newMap = mapIter2(newMap);
         newMap = mapIter2(newMap);
@@ -299,16 +299,16 @@ public class GameplayScreen implements Screen, InputProcessor {
         for (int i = tiledMapHeight - 1; i > 0; i--) {
             for (int j = 0; j < tiledMapWidth; j++) {
                 if (newMap[j][i] == WALL) {
-                    System.out.print("*");
+                    //System.out.print("*");
                     mapWallCount = mapWallCount + 1;
                 }
                 else if(newMap[j][i] == FLOOR) {
-                    System.out.print("!");
+                    //System.out.print("!");
                 }
             }
-            System.out.println();
+            //System.out.println();
         }
-        System.out.println("----------------------------------------------");
+        //System.out.println("----------------------------------------------");
 
         int[][] copyNewMap = deepCopyArray(newMap);
         ranPosX = randInt(1, (tiledMapWidth - 1));
@@ -317,7 +317,7 @@ public class GameplayScreen implements Screen, InputProcessor {
             ranPosX = randInt(1, (tiledMapWidth - 1));
             ranPosY = randInt(1, (tiledMapHeight - 1));
         }
-        System.out.println("Random pt: " + ranPosX + ", " + ranPosY);
+        //System.out.println("Random pt: " + ranPosX + ", " + ranPosY);
         int floodMapCount = 0;
         floodFill(copyNewMap, ranPosX, ranPosY, 0, 1);
 
@@ -325,18 +325,18 @@ public class GameplayScreen implements Screen, InputProcessor {
             for (int j = 0; j < tiledMapWidth; j++) {
                 if(copyNewMap[j][i] == WALL) {
                     floodMapCount = floodMapCount + 1;
-                    System.out.print("*");
+                    //System.out.print("*");
                 }
                 else if(copyNewMap[j][i] == FLOOR) {
                     newMap[j][i] = WALL;
-                    System.out.print("!");
+                    //System.out.print("!");
                 }
             }
-            System.out.println();
+            //System.out.println();
         }
 
         float floorCovered = ((floodMapCount - mapWallCount)/ (float)(tiledMapWidth * tiledMapHeight));
-        System.out.println(floorCovered);
+        //System.out.println(floorCovered);
         if(floorCovered > 0.45) {
             return newMap;
         }
@@ -491,6 +491,7 @@ public class GameplayScreen implements Screen, InputProcessor {
         newMap[ranPosX][ranPosY] = EXIT;
         System.out.println("EXIT: " + ranPosX + " " + ranPosY);
 
+        /*
         System.out.println("----------------------------------------------");
         for (int i = tiledMapHeight - 1; i > 0; i--) {
             for (int j = 0; j < tiledMapWidth; j++) {
@@ -513,6 +514,7 @@ public class GameplayScreen implements Screen, InputProcessor {
             }
             System.out.println();
         }
+        */
     }
 
     /*
