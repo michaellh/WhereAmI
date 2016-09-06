@@ -61,6 +61,12 @@ public class MainMenuScreen implements Screen {
         assetManager.load("man.png", Texture.class);
         assetManager.load("1pman.jpg", Texture.class);
         assetManager.load("layton_movie.jpg", Texture.class);
+        assetManager.load("OptionsButton.jpg", Texture.class);
+        assetManager.load("OptionsBackground.jpg", Texture.class);
+        assetManager.load("MainMenu.jpg", Texture.class);
+        assetManager.load("QuitGame.jpg", Texture.class);
+        assetManager.load("ResumeGame.jpg", Texture.class);
+        assetManager.load("SaveGame.jpg", Texture.class);
 
         // Create an orthographic camera and attach it to the stage with the game batch
         camera = new OrthographicCamera();

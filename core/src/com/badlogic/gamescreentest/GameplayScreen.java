@@ -1,5 +1,10 @@
 package com.badlogic.gamescreentest;
 
+import com.badlogic.gamescreentest.headsUP.Options.MainMenuOption;
+import com.badlogic.gamescreentest.headsUP.Options.OptionsBackground;
+import com.badlogic.gamescreentest.headsUP.Options.QuitGameOption;
+import com.badlogic.gamescreentest.headsUP.Options.ResumeGameOption;
+import com.badlogic.gamescreentest.headsUP.Options.SaveGameOption;
 import com.badlogic.gamescreentest.headsUP.MainMenuButton;
 import com.badlogic.gamescreentest.headsUP.Map.MapExit;
 import com.badlogic.gamescreentest.headsUP.Map.MapSeePlayer;
@@ -43,20 +48,32 @@ public class GameplayScreen implements Screen, InputProcessor {
     Stage stage;
     AssetManager assetManager;
     Texture happyFace, neutralFace, sadFace, badLogic, uglySean, humBird,
-            objection, chinPo, uglySean2, opm, man, layton;
+            objection, chinPo, uglySean2, opm, man, layton, optionsTex,
+            optionsBackTex, mainMenuTex, quitGameTex, resumeGameTex, saveGameTex;
     Random rand;
 
     gameOptions optButton;
+    OptionsBackground optionsBackground;
+    ResumeGameOption resumeGameOption;
+    SaveGameOption saveGameOption;
+    MainMenuOption mainMenuOption;
+    QuitGameOption quitGameOption;
+
     MapHUD mapButton;
     MainMenuButton menuButton;
     MapExit mapExit;
     MapSeePlayer mapSeePlayer;
+
     HPBarStyle hpBarStyle;
     PlayerHPBar playerHPBar;
     PlayerCharacter playerChar;
-    Array<standardEnemy> enemies;
 
-    int[][] ogMap, newMap;
+    Label saveGameText;
+    Label.LabelStyle saveGameTextStyle;
+    BitmapFont saveGameFont;
+
+    Array<standardEnemy> enemies;
+    int[][] newMap;
     ArrayList<Node> closed;
     PriorityQueue<Node> open;
     Node startNode, goalNode;
@@ -112,6 +129,12 @@ public class GameplayScreen implements Screen, InputProcessor {
         opm = assetManager.get("1pman.jpg", Texture.class);
         man = assetManager.get("man.png", Texture.class);
         layton = assetManager.get("layton_movie.jpg", Texture.class);
+        optionsTex = assetManager.get("OptionsButton.jpg", Texture.class);
+        optionsBackTex = assetManager.get("OptionsBackground.jpg", Texture.class);
+        mainMenuTex = assetManager.get("MainMenu.jpg", Texture.class);
+        saveGameTex = assetManager.get("SaveGame.jpg", Texture.class);
+        quitGameTex = assetManager.get("QuitGame.jpg", Texture.class);
+        resumeGameTex = assetManager.get("ResumeGame.jpg", Texture.class);
 
         if (this.game.getNewGame()) {
             SaveFile saveFile = new SaveFile();
@@ -150,29 +173,9 @@ public class GameplayScreen implements Screen, InputProcessor {
         playerHPBar.setValue(playerChar.HP);
         stage.addActor(playerHPBar);
 
-        // Add the main menu button to the stage
-        menuButton = new MainMenuButton(layton, cellWidth, cellHeight);
-        menuButton.setBounds(cellWidth * 7, cellHeight * 7, layton.getWidth(), layton.getHeight());
-        menuButton.addListener(new InputListener() {
-            @Override
-            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                System.out.println("menu button pressed");
-                return true;
-            }
-
-            @Override
-            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
-                for (int actors = 0; actors < stage.getActors().size; actors++) {
-                    stage.getActors().get(actors).addAction(Actions.removeActor());
-                }
-                game.setScreen(new MainMenuScreen(game));
-            }
-        });
-        stage.addActor(menuButton);
-
         // Add the map button to the stage
         mapButton = new MapHUD(chinPo, cellWidth, cellHeight);
-        mapButton.setBounds(cellWidth * 8, cellHeight * 7, chinPo.getWidth(), chinPo.getHeight());
+        mapButton.setBounds(cellWidth * 8, cellHeight * 7, cellWidth, cellHeight);
         mapButton.addListener(new InputListener() {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
@@ -209,9 +212,9 @@ public class GameplayScreen implements Screen, InputProcessor {
                         camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
                         // Disable the find player button and the map exit button
                         int mapExitLocation = stage.getActors().indexOf(mapExit, true);
-                        stage.getActors().get(mapExitLocation).setVisible(false);
+                        stage.getActors().get(mapExitLocation).addAction(Actions.removeActor());
                         int mapFindPlayer = stage.getActors().indexOf(mapSeePlayer, true);
-                        stage.getActors().get(mapFindPlayer).setVisible(false);
+                        stage.getActors().get(mapFindPlayer).addAction(Actions.removeActor());
 
                         // Enables the HP bar, map mode button, options button, and menu button
                         int mapButtonIndex = stage.getActors().indexOf(mapButton, true);
@@ -220,8 +223,8 @@ public class GameplayScreen implements Screen, InputProcessor {
                         stage.getActors().get(optButtonIndex).setVisible(true);
                         int hpBarIndex = stage.getActors().indexOf(playerHPBar, true);
                         stage.getActors().get(hpBarIndex).setVisible(true);
-                        int menuButtonIndex = stage.getActors().indexOf(menuButton, true);
-                        stage.getActors().get(menuButtonIndex).setVisible(true);
+                        //int menuButtonIndex = stage.getActors().indexOf(menuButton, true);
+                        //stage.getActors().get(menuButtonIndex).setVisible(true);
                     }
                 });
                 // Adds a see player button in map mode
@@ -243,8 +246,8 @@ public class GameplayScreen implements Screen, InputProcessor {
         });
         stage.addActor(mapButton);
 
-        optButton = new gameOptions(objection, cellWidth, cellHeight);
-        optButton.setBounds(cellWidth * 9, cellHeight * 7, objection.getWidth(), objection.getHeight());
+        optButton = new gameOptions(optionsTex, cellWidth, cellHeight);
+        optButton.setBounds(cellWidth * 9, cellHeight * 7, cellWidth, cellHeight);
         optButton.addListener(new InputListener() {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
@@ -255,13 +258,106 @@ public class GameplayScreen implements Screen, InputProcessor {
             @Override
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                 System.out.println("options touched up");
-                SaveFile saveData = new SaveFile(newMap, mapDiscovered, enemies, playerChar,
-                        tiledMapWidth, tiledMapHeight, floorLevel);
-                saveData.saveSaveData();
                 options = true;
+                for (int i = 0; i < stage.getActors().size; i++) {
+                    stage.getActors().get(i).setVisible(false);
+                }
+
+                optionsBackground = new OptionsBackground(optionsBackTex, cellWidth, cellHeight);
+                stage.addActor(optionsBackground);
+
+                resumeGameOption = new ResumeGameOption(resumeGameTex, cellWidth, cellHeight);
+                resumeGameOption.setBounds(cellWidth * 1.5f, cellHeight * 5, cellWidth * 7, cellHeight);
+                resumeGameOption.addListener(new InputListener() {
+                    @Override
+                    public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                        return true;
+                    }
+
+                    @Override
+                    public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                        int optBackIndex = stage.getActors().indexOf(optionsBackground, true);
+                        stage.getActors().get(optBackIndex).addAction(Actions.removeActor());
+                        int optResumeIndex = stage.getActors().indexOf(resumeGameOption, true);
+                        stage.getActors().get(optResumeIndex).addAction(Actions.removeActor());
+                        int optSaveIndex = stage.getActors().indexOf(saveGameOption, true);
+                        stage.getActors().get(optSaveIndex).addAction(Actions.removeActor());
+                        int optMenuIndex = stage.getActors().indexOf(mainMenuOption, true);
+                        stage.getActors().get(optMenuIndex).addAction(Actions.removeActor());
+                        int optQuitIndex = stage.getActors().indexOf(quitGameOption, true);
+                        stage.getActors().get(optQuitIndex).addAction(Actions.removeActor());
+
+                        for (int i = 0; i < stage.getActors().size; i++) {
+                            stage.getActors().get(i).setVisible(true);
+                        }
+
+                        options = false;
+                    }
+                });
+                stage.addActor(resumeGameOption);
+
+                saveGameOption = new SaveGameOption(saveGameTex, cellWidth, cellHeight);
+                saveGameOption.setBounds(cellWidth * 1.5f, cellHeight * 4, cellWidth * 7, cellHeight);
+                saveGameOption.addListener(new InputListener() {
+                    @Override
+                    public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                        return true;
+                    }
+
+                    @Override
+                    public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                        SaveFile saveData = new SaveFile(newMap, mapDiscovered, enemies, playerChar,
+                                tiledMapWidth, tiledMapHeight, floorLevel);
+                        saveData.saveSaveData();
+                        saveGameFont = new BitmapFont();
+                        saveGameFont.getData().setScale(15, 20);
+                        saveGameTextStyle = new Label.LabelStyle(saveGameFont, Color.WHITE);
+                        saveGameText = new Label("Game saved!", saveGameTextStyle);
+                        saveGameText.setPosition(cellWidth * 1.6f, cellHeight * 3);
+                        saveGameText.addAction(Actions.fadeOut(3));
+                        saveGameText.addAction(Actions.after(Actions.removeActor()));
+                        stage.addActor(saveGameText);
+                    }
+                });
+                stage.addActor(saveGameOption);
+
+                mainMenuOption = new MainMenuOption(mainMenuTex, cellWidth, cellHeight);
+                mainMenuOption.setBounds(cellWidth * 1.5f, cellHeight * 3, cellWidth * 7, cellHeight);
+                mainMenuOption.addListener(new InputListener() {
+                    @Override
+                    public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                        return true;
+                    }
+
+                    @Override
+                    public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                        for (int actors = 0; actors < stage.getActors().size; actors++) {
+                            stage.getActors().get(actors).addAction(Actions.removeActor());
+                        }
+                        game.setScreen(new MainMenuScreen(game));
+                    }
+                });
+                stage.addActor(mainMenuOption);
+
+                quitGameOption = new QuitGameOption(quitGameTex, cellWidth, cellHeight);
+                quitGameOption.setBounds(cellWidth * 1.5f, cellHeight * 2, cellWidth * 7, cellHeight);
+                quitGameOption.addListener(new InputListener() {
+                    @Override
+                    public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                        return true;
+                    }
+
+                    @Override
+                    public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                        dispose();
+                        Gdx.app.exit();
+                    }
+                });
+                stage.addActor(quitGameOption);
             }
         });
         stage.addActor(optButton);
+
 
         //give priority touch to the stage actors
         InputMultiplexer im = new InputMultiplexer(stage, this);
@@ -370,7 +466,6 @@ public class GameplayScreen implements Screen, InputProcessor {
         floodFill(node, x + 1, y - 1, target, replace); //bot right
         floodFill(node, x + 1, y, target, replace);   //right
         floodFill(node, x + 1, y + 1, target, replace); //top right
-        return;
     }
 
     public int[][] deepCopyArray(int[][] original) {
@@ -747,6 +842,11 @@ public class GameplayScreen implements Screen, InputProcessor {
                 }
             }
         }
+        /*
+        else if (options) {
+
+        }
+        */
         else {
             for (int i = (playerChar.getX() - (8)); i < (playerChar.getX() + (9)); i++) {
                 for (int j = (playerChar.getY() - (5)); j < (playerChar.getY() + (6)); j++) {
@@ -776,18 +876,10 @@ public class GameplayScreen implements Screen, InputProcessor {
                 }
             }
         }
-        //checkOptions();
         stage.getBatch().end();
         stage.act(delta);
         stage.draw();
     }
-
-    /*
-    public void checkOptions() {
-        if (options == true) {
-            stage.getActors().first().setVisible(true);
-        }
-    }*/
 
     /*
     Description: Generates a pseudo-random integer between two input integers
@@ -847,6 +939,9 @@ public class GameplayScreen implements Screen, InputProcessor {
             this.game.setScreen(new MainMenuScreen(game));
         }
         else if (mapPressed) {
+            return false;
+        }
+        else if (options) {
             return false;
         }
         else {
