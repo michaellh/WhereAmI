@@ -15,6 +15,8 @@ import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -38,6 +40,23 @@ import java.util.Arrays;
 import java.util.PriorityQueue;
 import java.util.Random;
 
+/*
+Decisions Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 3.0 License
+http://creativecommons.org/licenses/by/3.0/
+*/
+
+/*
+Dying Sound by Mike Koenig (http://soundbible.com/810-Dying.html)
+Licensed under Creative Commons: By Attribution 3.0 License
+http://creativecommons.org/licenses/by/3.0/
+ */
+
+/*
+1 Person Cheering Sound by Jett Rifkin (http://soundbible.com/2103-1-Person-Cheering.html)
+Licensed under Creative Commons: By Attribution 3.0 License
+http://creativecommons.org/licenses/by/3.0/
+ */
 
 /**
  * Created by admin on 6/8/2016.
@@ -47,8 +66,8 @@ public class GameplayScreen implements Screen, InputProcessor {
     OrthographicCamera camera;
     Stage stage;
     AssetManager assetManager;
-    Texture happyFace, neutralFace, sadFace, badLogic, uglySean, humBird,
-            objection, chinPo, uglySean2, opm, man, layton, optionsTex,
+    Texture happyFace, neutralFace, sadFace, badLogic, uglySean,
+            objection, chinPo, uglySean2, opm, man, optionsTex,
             optionsBackTex, mainMenuTex, quitGameTex, resumeGameTex, saveGameTex;
     Random rand;
 
@@ -60,7 +79,6 @@ public class GameplayScreen implements Screen, InputProcessor {
     QuitGameOption quitGameOption;
 
     MapHUD mapButton;
-    MainMenuButton menuButton;
     MapExit mapExit;
     MapSeePlayer mapSeePlayer;
 
@@ -91,6 +109,8 @@ public class GameplayScreen implements Screen, InputProcessor {
     Vector2 userTouch, dragOld, dragNew;
     Vector3 worldTouch;
 
+    Music worldMusic;
+
     public GameplayScreen(final GameScreen gam) {
         screenWidth = Gdx.graphics.getWidth();
         screenHeight = Gdx.graphics.getHeight();
@@ -117,18 +137,18 @@ public class GameplayScreen implements Screen, InputProcessor {
 
         //get, after loading, the assets
         assetManager = game.assetManager;
+        worldMusic = assetManager.get("Decisions.mp3", Music.class);
+        worldMusic.setLooping(true);
         uglySean = assetManager.get("ugly face sean.jpg", Texture.class);
         happyFace = assetManager.get("happyface.jpg", Texture.class);
         neutralFace = assetManager.get("neutralface.jpg", Texture.class);
         sadFace = assetManager.get("sadface.jpg", Texture.class);
         badLogic = assetManager.get("badlogic.jpg", Texture.class);
-        humBird = assetManager.get("cool hummingbird.jpg", Texture.class);
         objection = assetManager.get("OBJECTION.jpg", Texture.class);
         chinPo = assetManager.get("Chin_po.jpg", Texture.class);
         uglySean2 = assetManager.get("ugly face sean 2.png", Texture.class);
         opm = assetManager.get("1pman.jpg", Texture.class);
         man = assetManager.get("man.png", Texture.class);
-        layton = assetManager.get("layton_movie.jpg", Texture.class);
         optionsTex = assetManager.get("OptionsButton.jpg", Texture.class);
         optionsBackTex = assetManager.get("OptionsBackground.jpg", Texture.class);
         mainMenuTex = assetManager.get("MainMenu.jpg", Texture.class);
@@ -185,6 +205,7 @@ public class GameplayScreen implements Screen, InputProcessor {
 
             @Override
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                assetManager.get("Button Push.mp3", Sound.class).play();
                 System.out.println("map touched up");
                 // Temporarily disable the HP bar, map mode button, options button, and menu button
                 for (int i = 0; i < stage.getActors().size; i++) {
@@ -206,6 +227,7 @@ public class GameplayScreen implements Screen, InputProcessor {
 
                     @Override
                     public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                        assetManager.get("Button Push.mp3", Sound.class).play();
                         mapPressed = false;
                         // Sets the camera back to game mode view
                         camera.setToOrtho(false, 14 * TEXTURESIZE, 10 * TEXTURESIZE);
@@ -239,6 +261,7 @@ public class GameplayScreen implements Screen, InputProcessor {
 
                     @Override
                     public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                        assetManager.get("Button Push.mp3", Sound.class).play();
                         camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
                     }
                 });
@@ -257,6 +280,7 @@ public class GameplayScreen implements Screen, InputProcessor {
 
             @Override
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                assetManager.get("Button Push.mp3", Sound.class).play();
                 System.out.println("options touched up");
                 options = true;
                 for (int i = 0; i < stage.getActors().size; i++) {
@@ -276,6 +300,7 @@ public class GameplayScreen implements Screen, InputProcessor {
 
                     @Override
                     public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                        assetManager.get("Button Push.mp3", Sound.class).play();
                         int optBackIndex = stage.getActors().indexOf(optionsBackground, true);
                         stage.getActors().get(optBackIndex).addAction(Actions.removeActor());
                         int optResumeIndex = stage.getActors().indexOf(resumeGameOption, true);
@@ -306,6 +331,7 @@ public class GameplayScreen implements Screen, InputProcessor {
 
                     @Override
                     public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                        assetManager.get("Button Push.mp3", Sound.class).play();
                         SaveFile saveData = new SaveFile(newMap, mapDiscovered, enemies, playerChar,
                                 tiledMapWidth, tiledMapHeight, floorLevel);
                         saveData.saveSaveData();
@@ -331,6 +357,7 @@ public class GameplayScreen implements Screen, InputProcessor {
 
                     @Override
                     public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                        assetManager.get("Button Push.mp3", Sound.class).play();
                         for (int actors = 0; actors < stage.getActors().size; actors++) {
                             stage.getActors().get(actors).addAction(Actions.removeActor());
                         }
@@ -349,6 +376,7 @@ public class GameplayScreen implements Screen, InputProcessor {
 
                     @Override
                     public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                        assetManager.get("Button Push.mp3", Sound.class).play();
                         dispose();
                         Gdx.app.exit();
                     }
@@ -842,11 +870,6 @@ public class GameplayScreen implements Screen, InputProcessor {
                 }
             }
         }
-        /*
-        else if (options) {
-
-        }
-        */
         else {
             for (int i = (playerChar.getX() - (8)); i < (playerChar.getX() + (9)); i++) {
                 for (int j = (playerChar.getY() - (5)); j < (playerChar.getY() + (6)); j++) {
@@ -893,12 +916,13 @@ public class GameplayScreen implements Screen, InputProcessor {
 
     @Override
     public void show() {
-
+        worldMusic.setPosition(0);
+        worldMusic.play();
     }
 
     @Override
     public void hide() {
-
+        worldMusic.pause();
     }
 
     @Override
@@ -945,7 +969,7 @@ public class GameplayScreen implements Screen, InputProcessor {
             return false;
         }
         else {
-            float delay = 0.03f; // seconds
+            float delay = 0.02f; // seconds
             Timer.schedule(new Timer.Task(){
                 @Override
                 public void run() {
@@ -966,13 +990,16 @@ public class GameplayScreen implements Screen, InputProcessor {
                                             worldTouch.y == enemies.get(i).getY()) {
                                         enemies.get(i).takeDamage(playerChar.ATK);
                                         if (enemies.get(i).isDead()) {
+                                            assetManager.get("Dying.mp3", Sound.class).play();
                                             newMap[enemies.get(i).getX()][enemies.get(i).getY()] = FLOOR;
                                             enemies.removeIndex(i);
                                         }
+                                        assetManager.get("Pain.mp3", Sound.class).play(0.1f);
                                     }
                                 }
                             }
                             else if (newMap[(int) worldTouch.x][(int) worldTouch.y] == EXIT) {
+                                assetManager.get("Floor Climb.mp3", Sound.class).play();
                                 floorLevel = floorLevel + 1;
                                 recreateWorld();
                                 playerChar.setHpBeforeSave(playerChar.HP);
@@ -981,7 +1008,6 @@ public class GameplayScreen implements Screen, InputProcessor {
                                 SaveFile saveData = new SaveFile(newMap, mapDiscovered, enemies, playerChar,
                                         tiledMapWidth, tiledMapHeight, floorLevel);
                                 saveData.saveSaveData();
-                                //return true;
                             }
                             else if (newMap[(int) worldTouch.x][(int) worldTouch.y] == FLOOR) {
                                 newMap[playerChar.x][playerChar.y] = FLOOR;
@@ -1015,6 +1041,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                                     // continue
                                 }
                                 else if (path.size == 1) {
+                                    assetManager.get("Attacked.mp3", Sound.class).play(0.5f);
                                     playerChar.takeDamage(enemies.get(i).ATK);
                                     playerHPBar.setValue(playerChar.HP);
                                     if (playerChar.isDead()) {

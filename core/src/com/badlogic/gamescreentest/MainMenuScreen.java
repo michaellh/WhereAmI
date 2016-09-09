@@ -3,10 +3,11 @@ package com.badlogic.gamescreentest;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -29,17 +30,17 @@ public class MainMenuScreen implements Screen {
     Label.LabelStyle textStyle;
     BitmapFont font;
 
+    Music menuMusic;
+    Sound buttonPush;
+
     //MainMenuBackGround backGround;
     com.badlogic.gamescreentest.menuButtons.MainMenuCont contButton;
     com.badlogic.gamescreentest.menuButtons.MainMenuQuit quitButton;
     com.badlogic.gamescreentest.menuButtons.MainMenuNewGame newGameButton;
 
-    boolean assetsLoaded;
     float cellWidth, cellHeight, screenWidth, screenHeight;
 
     public MainMenuScreen(final GameScreen gam) {
-        assetsLoaded = false;
-
         screenWidth = Gdx.graphics.getWidth();
         screenHeight = Gdx.graphics.getHeight();
         cellWidth = screenWidth / 5;
@@ -47,26 +48,9 @@ public class MainMenuScreen implements Screen {
 
         game = gam;
 
-        // Load the assets needed for the game screen
         assetManager = game.assetManager;
-        assetManager.load("happyface.jpg", Texture.class);
-        assetManager.load("sadface.jpg", Texture.class);
-        assetManager.load("neutralface.jpg", Texture.class);
-        assetManager.load("badlogic.jpg", Texture.class);
-        assetManager.load("ugly face sean.jpg", Texture.class);
-        assetManager.load("OBJECTION.jpg", Texture.class);
-        assetManager.load("cool hummingbird.jpg", Texture.class);
-        assetManager.load("Chin_po.jpg", Texture.class);
-        assetManager.load("ugly face sean 2.png", Texture.class);
-        assetManager.load("man.png", Texture.class);
-        assetManager.load("1pman.jpg", Texture.class);
-        assetManager.load("layton_movie.jpg", Texture.class);
-        assetManager.load("OptionsButton.jpg", Texture.class);
-        assetManager.load("OptionsBackground.jpg", Texture.class);
-        assetManager.load("MainMenu.jpg", Texture.class);
-        assetManager.load("QuitGame.jpg", Texture.class);
-        assetManager.load("ResumeGame.jpg", Texture.class);
-        assetManager.load("SaveGame.jpg", Texture.class);
+        menuMusic = assetManager.get("I'm Still Here.mp3", Music.class);
+        menuMusic.setLooping(true);
 
         // Create an orthographic camera and attach it to the stage with the game batch
         camera = new OrthographicCamera();
@@ -87,9 +71,10 @@ public class MainMenuScreen implements Screen {
 
             @Override
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                assetManager.get("Button Push.mp3", Sound.class).play();
                 //continue from the save file
                 saveFile = new SaveFile();
-                if(assetsLoaded && saveFile.saveFilesExist()) {
+                if(saveFile.saveFilesExist()) {
                     dispose();
                     game.setNewGame(false);
                     game.setScreen(new GameplayScreen(game));
@@ -119,6 +104,7 @@ public class MainMenuScreen implements Screen {
 
             @Override
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                assetManager.get("Button Push.mp3", Sound.class).play();
                 dispose();
                 Gdx.app.exit();
             }
@@ -136,11 +122,10 @@ public class MainMenuScreen implements Screen {
 
             @Override
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                assetManager.get("Button Push.mp3", Sound.class).play();
                 dispose();
                 game.setNewGame(true);
-                if(assetsLoaded) {
-                    game.setScreen(new GameplayScreen(game));
-                }
+                game.setScreen(new GameplayScreen(game));
             }
         });
         stage.addActor(newGameButton);
@@ -151,10 +136,6 @@ public class MainMenuScreen implements Screen {
     @Override
     public void render(float delta) {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-
-        if(assetManager.update()) {
-            assetsLoaded = true;
-        }
 
         stage.act(Gdx.graphics.getDeltaTime());
         stage.draw();
@@ -170,12 +151,13 @@ public class MainMenuScreen implements Screen {
 
     @Override
     public void show() {
-
+        menuMusic.setPosition(0);
+        menuMusic.play();
     }
 
     @Override
     public void hide() {
-
+        menuMusic.pause();
     }
 
     @Override
