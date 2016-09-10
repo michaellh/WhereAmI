@@ -21,8 +21,11 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -68,7 +71,8 @@ public class GameplayScreen implements Screen, InputProcessor {
     AssetManager assetManager;
     Texture happyFace, neutralFace, sadFace, badLogic, uglySean,
             objection, chinPo, uglySean2, opm, man, optionsTex,
-            optionsBackTex, mainMenuTex, quitGameTex, resumeGameTex, saveGameTex;
+            optionsBackTex, mainMenuTex, quitGameTex, resumeGameTex,
+            saveGameTex, playerIdleTex, playerAtkRightTex, playerAtkLeftTex;
     Random rand;
 
     gameOptions optButton;
@@ -86,6 +90,11 @@ public class GameplayScreen implements Screen, InputProcessor {
     PlayerHPBar playerHPBar;
     PlayerCharacter playerChar;
 
+    Animation playerIdleAnimation;
+    TextureRegion[] playerIdleFrames;
+    TextureRegion playerIdleCurrentFrame;
+    float playerIdleStateTime;
+
     Label saveGameText;
     Label.LabelStyle saveGameTextStyle;
     BitmapFont saveGameFont;
@@ -101,8 +110,9 @@ public class GameplayScreen implements Screen, InputProcessor {
     int tiledMapWidth, tiledMapHeight;
     int FLOOR, WALL, PLAYER, ENEMY, EXIT, TEXTURESIZE;
     int wallCount, floorLevel;
+    int enemyX;
 
-    boolean options, mapPressed, gameOver;
+    boolean options, mapPressed, gameOver, attackedEnemy;
     int ranPosX, ranPosY, startPosX, startPosY, endPosX, endPosY;
 
     ArrayList<Vector2> mapDiscovered;
@@ -120,6 +130,7 @@ public class GameplayScreen implements Screen, InputProcessor {
         gameOver = false;
         options = false;
         mapPressed = false;
+        attackedEnemy = false;
 
         TEXTURESIZE = 32;
         FLOOR = 0;
@@ -139,6 +150,9 @@ public class GameplayScreen implements Screen, InputProcessor {
         assetManager = game.assetManager;
         worldMusic = assetManager.get("Decisions.mp3", Music.class);
         worldMusic.setLooping(true);
+        playerIdleTex = assetManager.get("playerCharacter.png", Texture.class);
+        playerAtkRightTex = assetManager.get("playerAttackRight.png", Texture.class);
+        playerAtkLeftTex = assetManager.get("playerAttackLeft.png", Texture.class);
         uglySean = assetManager.get("ugly face sean.jpg", Texture.class);
         happyFace = assetManager.get("happyface.jpg", Texture.class);
         neutralFace = assetManager.get("neutralface.jpg", Texture.class);
@@ -192,6 +206,17 @@ public class GameplayScreen implements Screen, InputProcessor {
         playerHPBar.setPosition(0, 7 * cellHeight + spriteBack.getHeight());
         playerHPBar.setValue(playerChar.HP);
         stage.addActor(playerHPBar);
+
+        // Initialize the player character animations
+        TextureRegion[][] tmp = TextureRegion.split(playerIdleTex, (playerIdleTex.getWidth()/4 + 5), (playerIdleTex.getHeight()/2 + 5));
+        playerIdleFrames = new TextureRegion[2];
+        int index = 0;
+            for (int j = 0; j < 2; j++) {
+                playerIdleFrames[index++] = tmp[0][j];
+            }
+
+        playerIdleAnimation = new Animation(1f, playerIdleFrames);
+        playerIdleStateTime = 0f;
 
         // Add the map button to the stage
         mapButton = new MapHUD(chinPo, cellWidth, cellHeight);
@@ -842,6 +867,8 @@ public class GameplayScreen implements Screen, InputProcessor {
         stage.getBatch().setProjectionMatrix(camera.combined);
 
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        playerIdleStateTime += Gdx.graphics.getDeltaTime();
+        playerIdleCurrentFrame = playerIdleAnimation.getKeyFrame(playerIdleStateTime, true);
 
         stage.getBatch().begin();
         if (gameOver) {
@@ -853,8 +880,16 @@ public class GameplayScreen implements Screen, InputProcessor {
                     stage.getBatch().draw(happyFace, mapDiscovered.get(i).x * TEXTURESIZE,
                             mapDiscovered.get(i).y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
                 } else if (newMap[(int) mapDiscovered.get(i).x][(int) mapDiscovered.get(i).y] == PLAYER) {
-                    stage.getBatch().draw(sadFace, playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE,
-                            TEXTURESIZE, TEXTURESIZE);
+                    //background
+                    Color c = stage.getBatch().getColor();
+                    stage.getBatch().setColor(c.r, c.g, c.b, 1f); //set alpha to 1
+                    stage.getBatch().draw(badLogic, playerChar.x * TEXTURESIZE,
+                            playerChar.y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
+                    //foreground
+                    c = stage.getBatch().getColor();
+                    stage.getBatch().setColor(c.r, c.g, c.b, 1f);//set alpha to 1
+                    stage.getBatch().draw(playerIdleCurrentFrame, playerChar.x * TEXTURESIZE,
+                            playerChar.y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
                 }
                 /*
                 else if (newMap[(int) mapDiscovered.get(i).x][(int) mapDiscovered.get(i).y] == ENEMY) {
@@ -881,8 +916,29 @@ public class GameplayScreen implements Screen, InputProcessor {
                                 TEXTURESIZE, TEXTURESIZE);
                     }
                     else if (newMap[i][j] == PLAYER) {
-                        stage.getBatch().draw(sadFace, playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE,
-                                TEXTURESIZE, TEXTURESIZE);
+                        if(attackedEnemy) {
+                            if(playerChar.getX() > enemyX) {
+                                stage.getBatch().draw(playerAtkLeftTex, playerChar.x * TEXTURESIZE,
+                                        playerChar.y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
+                            }
+                            else {
+                                stage.getBatch().draw(playerAtkRightTex, playerChar.x * TEXTURESIZE,
+                                        playerChar.y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
+                            }
+
+                        }
+                        else {
+                            //background
+                            Color c = stage.getBatch().getColor();
+                            stage.getBatch().setColor(c.r, c.g, c.b, 1f); //set alpha to 1
+                            stage.getBatch().draw(badLogic, playerChar.x * TEXTURESIZE,
+                                    playerChar.y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
+                            //foreground
+                            c = stage.getBatch().getColor();
+                            stage.getBatch().setColor(c.r, c.g, c.b, 1f);//set alpha to 0.3
+                            stage.getBatch().draw(playerIdleCurrentFrame, playerChar.x * TEXTURESIZE,
+                                    playerChar.y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
+                        }
                     }
                     else if (newMap[i][j] == ENEMY) {
                         stage.getBatch().draw(neutralFace, i * TEXTURESIZE, j * TEXTURESIZE,
@@ -988,6 +1044,8 @@ public class GameplayScreen implements Screen, InputProcessor {
                                 for (int i = 0; i < enemies.size; i++) {
                                     if (worldTouch.x == enemies.get(i).getX() &&
                                             worldTouch.y == enemies.get(i).getY()) {
+                                        enemyX = enemies.get(i).getX();
+                                        attackedEnemy = true;
                                         enemies.get(i).takeDamage(playerChar.ATK);
                                         if (enemies.get(i).isDead()) {
                                             assetManager.get("Dying.mp3", Sound.class).play();
@@ -1077,7 +1135,6 @@ public class GameplayScreen implements Screen, InputProcessor {
         //System.out.println("\n" + "Touch: " + worldTouch.x + " " + worldTouch.y);
         return true;
     }
-
 
     @Override
     public boolean touchDragged(int screenX, int screenY, int pointer) {

@@ -22,6 +22,9 @@ public class GameScreen extends Game {
 		assetManager.load("Pain.mp3", Sound.class);
 		assetManager.load("Dying.mp3", Sound.class);
 		assetManager.load("Floor Climb.mp3", Sound.class);
+		assetManager.load("playerCharacter.png", Texture.class);
+		assetManager.load("playerAttackRight.png", Texture.class);
+		assetManager.load("playerAttackLeft.png", Texture.class);
 		assetManager.load("happyface.jpg", Texture.class);
 		assetManager.load("sadface.jpg", Texture.class);
 		assetManager.load("neutralface.jpg", Texture.class);
