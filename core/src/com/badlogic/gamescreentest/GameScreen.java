@@ -40,7 +40,7 @@ public class GameScreen extends Game {
 		assetManager.load("MainMenu.jpg", Texture.class);
 		assetManager.load("QuitGame.jpg", Texture.class);
 		assetManager.load("ResumeGame.jpg", Texture.class);
-		assetManager.load("SaveGame.jpg", Texture.class);
+		//assetManager.load("SaveGame.jpg", Texture.class);
 		assetManager.finishLoading();
 
 		batch = new SpriteBatch();

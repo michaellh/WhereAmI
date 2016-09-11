@@ -5,11 +5,10 @@ import com.badlogic.gamescreentest.headsUP.Options.OptionsBackground;
 import com.badlogic.gamescreentest.headsUP.Options.QuitGameOption;
 import com.badlogic.gamescreentest.headsUP.Options.ResumeGameOption;
 import com.badlogic.gamescreentest.headsUP.Options.SaveGameOption;
-import com.badlogic.gamescreentest.headsUP.MainMenuButton;
 import com.badlogic.gamescreentest.headsUP.Map.MapExit;
 import com.badlogic.gamescreentest.headsUP.Map.MapSeePlayer;
-import com.badlogic.gamescreentest.headsUP.MapHUD;
-import com.badlogic.gamescreentest.headsUP.gameOptions;
+import com.badlogic.gamescreentest.headsUP.Map.MapHUD;
+import com.badlogic.gamescreentest.headsUP.Options.gameOptions;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.InputProcessor;
@@ -24,7 +23,6 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.Sprite;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
@@ -72,7 +70,7 @@ public class GameplayScreen implements Screen, InputProcessor {
     Texture hpBarTex, hpBarPivotTex,
             mapExitTex, mapTex, optionsTex, mapLocateTex,
             optionsBackTex, mainMenuTex, quitGameTex, resumeGameTex,
-            saveGameTex, playerIdleTex, playerAtkRightTex, playerAtkLeftTex,
+            playerIdleTex, playerAtkRightTex, playerAtkLeftTex,
             enemyIdleTex, enemyAtkTex, portalTex, wallTex, floorTex;
     Random rand;
 
@@ -87,8 +85,8 @@ public class GameplayScreen implements Screen, InputProcessor {
     MapExit mapExit;
     MapSeePlayer mapSeePlayer;
 
-    HPBarStyle hpBarStyle;
-    PlayerHPBar playerHPBar;
+    com.badlogic.gamescreentest.headsUP.PlayerHealthBar.HPBarStyle hpBarStyle;
+    com.badlogic.gamescreentest.headsUP.PlayerHealthBar.PlayerHPBar playerHPBar;
     PlayerCharacter playerChar;
 
     Animation playerIdleAnimation;
@@ -166,7 +164,7 @@ public class GameplayScreen implements Screen, InputProcessor {
         optionsTex = assetManager.get("OptionsButton.jpg", Texture.class);
         optionsBackTex = assetManager.get("OptionsBackground.jpg", Texture.class);
         mainMenuTex = assetManager.get("MainMenu.jpg", Texture.class);
-        saveGameTex = assetManager.get("SaveGame.jpg", Texture.class);
+        //saveGameTex = assetManager.get("SaveGame.jpg", Texture.class);
         quitGameTex = assetManager.get("QuitGame.jpg", Texture.class);
         resumeGameTex = assetManager.get("ResumeGame.jpg", Texture.class);
         hpBarTex = assetManager.get("healthBar.jpg", Texture.class);
@@ -201,9 +199,9 @@ public class GameplayScreen implements Screen, InputProcessor {
         Sprite spriteKnob = new Sprite(hpBarPivotTex);
         spriteKnob.setSize(0, spriteBack.getHeight());
         SpriteDrawable spriteDrawableKnob = new SpriteDrawable(spriteKnob);
-        hpBarStyle = new HPBarStyle(spriteDrawableBack, spriteDrawableKnob);
+        hpBarStyle = new com.badlogic.gamescreentest.headsUP.PlayerHealthBar.HPBarStyle(spriteDrawableBack, spriteDrawableKnob);
         hpBarStyle.knobBefore = hpBarStyle.knob;
-        playerHPBar = new PlayerHPBar(0, playerChar.hpBeforeSave, 1, false, hpBarStyle);
+        playerHPBar = new com.badlogic.gamescreentest.headsUP.PlayerHealthBar.PlayerHPBar(0, playerChar.hpBeforeSave, 1, false, hpBarStyle);
         playerHPBar.setSize(spriteBack.getWidth(), spriteBack.getHeight());
         playerHPBar.setPosition(0, 7 * cellHeight + spriteBack.getHeight());
         playerHPBar.setValue(playerChar.HP);
@@ -348,6 +346,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                 });
                 stage.addActor(resumeGameOption);
 
+                /*
                 saveGameOption = new SaveGameOption(saveGameTex, cellWidth, cellHeight);
                 saveGameOption.setBounds(cellWidth * 1.5f, cellHeight * 4, cellWidth * 7, cellHeight);
                 saveGameOption.addListener(new InputListener() {
@@ -373,6 +372,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                     }
                 });
                 stage.addActor(saveGameOption);
+                */
 
                 mainMenuOption = new MainMenuOption(mainMenuTex, cellWidth, cellHeight);
                 mainMenuOption.setBounds(cellWidth * 1.5f, cellHeight * 3, cellWidth * 7, cellHeight);
@@ -404,6 +404,9 @@ public class GameplayScreen implements Screen, InputProcessor {
                     @Override
                     public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                         assetManager.get("Button Push.mp3", Sound.class).play();
+                        SaveFile saveFile = new SaveFile(newMap, mapDiscovered, enemies, playerChar,
+                                tiledMapWidth, tiledMapHeight, floorLevel);
+                        saveFile.saveSaveData();
                         dispose();
                         Gdx.app.exit();
                     }
@@ -1026,7 +1029,9 @@ public class GameplayScreen implements Screen, InputProcessor {
 
     @Override
     public void pause() {
-
+        SaveFile saveFile = new SaveFile(newMap, mapDiscovered, enemies, playerChar,
+                tiledMapWidth, tiledMapHeight, floorLevel);
+        saveFile.saveSaveData();
     }
 
     @Override

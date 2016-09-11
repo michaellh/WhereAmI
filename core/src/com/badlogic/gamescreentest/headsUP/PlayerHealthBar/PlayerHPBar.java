@@ -1,4 +1,4 @@
-package com.badlogic.gamescreentest;
+package com.badlogic.gamescreentest.headsUP.PlayerHealthBar;
 
 import com.badlogic.gdx.scenes.scene2d.ui.ProgressBar;
 
