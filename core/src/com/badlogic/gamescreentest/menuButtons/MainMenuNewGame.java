@@ -15,7 +15,7 @@ public class MainMenuNewGame extends Actor {
     private float height;
 
     public MainMenuNewGame(float cellWidth, float cellHeight) {
-        img = new Texture("happyface.jpg");
+        img = new Texture("menuNew.jpg");
         x = cellWidth * 3;
         y = cellHeight;
         width = cellWidth;

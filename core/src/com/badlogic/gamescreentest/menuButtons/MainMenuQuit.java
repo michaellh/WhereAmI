@@ -15,7 +15,7 @@ public class MainMenuQuit extends Actor {
     private float height;
 
     public MainMenuQuit(float cellWidth, float cellHeight) {
-        img = new Texture("sadface.jpg");
+        img = new Texture("menuQuit.jpg");
         x = cellWidth * 2;
         y = cellHeight;
         width = cellWidth;

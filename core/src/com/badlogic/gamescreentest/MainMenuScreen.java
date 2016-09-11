@@ -31,9 +31,8 @@ public class MainMenuScreen implements Screen {
     BitmapFont font;
 
     Music menuMusic;
-    Sound buttonPush;
 
-    //MainMenuBackGround backGround;
+    com.badlogic.gamescreentest.menuButtons.MainMenuBackGround backGround;
     com.badlogic.gamescreentest.menuButtons.MainMenuCont contButton;
     com.badlogic.gamescreentest.menuButtons.MainMenuQuit quitButton;
     com.badlogic.gamescreentest.menuButtons.MainMenuNewGame newGameButton;
@@ -57,8 +56,8 @@ public class MainMenuScreen implements Screen {
         stage = new Stage(new ScreenViewport(camera), game.batch);
 
         // Add the main menu background to the stage
-        //backGround = new MainMenuBackGround(cellWidth, cellHeight);
-        //stage.addActor(backGround);
+        backGround = new com.badlogic.gamescreentest.menuButtons.MainMenuBackGround(cellWidth, cellHeight);
+        stage.addActor(backGround);
 
         // Add the continue game button to the stage
         contButton = new com.badlogic.gamescreentest.menuButtons.MainMenuCont(cellWidth, cellHeight);
@@ -82,9 +81,9 @@ public class MainMenuScreen implements Screen {
                 else {
                     font = new BitmapFont();
                     font.getData().setScale(5, 5);
-                    textStyle = new Label.LabelStyle(font, Color.BLACK);
+                    textStyle = new Label.LabelStyle(font, Color.WHITE);
                     text = new Label("No save files found!", textStyle);
-                    text.setPosition(screenWidth/3, cellHeight * 1);
+                    text.setPosition(screenWidth/3, cellHeight - (cellHeight/2));
                     text.addAction(Actions.fadeOut(3));
                     stage.addActor(text);
                     System.out.println("No save files detected!");
@@ -135,7 +134,7 @@ public class MainMenuScreen implements Screen {
 
     @Override
     public void render(float delta) {
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
         stage.act(Gdx.graphics.getDeltaTime());
         stage.draw();

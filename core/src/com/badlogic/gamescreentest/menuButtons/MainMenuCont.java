@@ -16,7 +16,7 @@ public class MainMenuCont extends Actor {
     private float height;
 
     public MainMenuCont(float cellWidth, float cellHeight) {
-        img = new Texture("neutralface.jpg");
+        img = new Texture("menuCont.jpg");
         x = cellWidth * 1;
         y = cellHeight;
         width = cellWidth;

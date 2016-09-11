@@ -1,4 +1,4 @@
-package com.badlogic.gamescreentest;
+package com.badlogic.gamescreentest.menuButtons;
 
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
@@ -15,16 +15,15 @@ public class MainMenuBackGround extends Actor {
     private float height;
 
     public MainMenuBackGround(float cellWidth, float cellHeight) {
-        img = new Texture("ugly face sean.jpg");
+        img = new Texture("gameTitle.jpg");
         x = 0;
-        y = 0;
+        y = cellHeight * 2;
         width = cellWidth * 5;
-        height = cellHeight * 3;
+        height = cellHeight;
     }
 
-    /*
     @Override
     public void draw(Batch batch, float parentAlpha) {
         batch.draw(img, x, y, width, height);
-    }*/
+    }
 }

@@ -69,10 +69,11 @@ public class GameplayScreen implements Screen, InputProcessor {
     OrthographicCamera camera;
     Stage stage;
     AssetManager assetManager;
-    Texture happyFace, neutralFace, sadFace, badLogic, uglySean,
-            objection, chinPo, uglySean2, opm, man, optionsTex,
+    Texture hpBarTex, hpBarPivotTex,
+            mapExitTex, mapTex, optionsTex, mapLocateTex,
             optionsBackTex, mainMenuTex, quitGameTex, resumeGameTex,
-            saveGameTex, playerIdleTex, playerAtkRightTex, playerAtkLeftTex;
+            saveGameTex, playerIdleTex, playerAtkRightTex, playerAtkLeftTex,
+            enemyIdleTex, enemyAtkTex, portalTex, wallTex, floorTex;
     Random rand;
 
     gameOptions optButton;
@@ -112,7 +113,7 @@ public class GameplayScreen implements Screen, InputProcessor {
     int wallCount, floorLevel;
     int enemyX;
 
-    boolean options, mapPressed, gameOver, attackedEnemy;
+    boolean options, mapPressed, gameOver, attackedEnemy, attackedPlayer;
     int ranPosX, ranPosY, startPosX, startPosY, endPosX, endPosY;
 
     ArrayList<Vector2> mapDiscovered;
@@ -131,6 +132,7 @@ public class GameplayScreen implements Screen, InputProcessor {
         options = false;
         mapPressed = false;
         attackedEnemy = false;
+        attackedPlayer = false;
 
         TEXTURESIZE = 32;
         FLOOR = 0;
@@ -153,22 +155,22 @@ public class GameplayScreen implements Screen, InputProcessor {
         playerIdleTex = assetManager.get("playerCharacter.png", Texture.class);
         playerAtkRightTex = assetManager.get("playerAttackRight.png", Texture.class);
         playerAtkLeftTex = assetManager.get("playerAttackLeft.png", Texture.class);
-        uglySean = assetManager.get("ugly face sean.jpg", Texture.class);
-        happyFace = assetManager.get("happyface.jpg", Texture.class);
-        neutralFace = assetManager.get("neutralface.jpg", Texture.class);
-        sadFace = assetManager.get("sadface.jpg", Texture.class);
-        badLogic = assetManager.get("badlogic.jpg", Texture.class);
-        objection = assetManager.get("OBJECTION.jpg", Texture.class);
-        chinPo = assetManager.get("Chin_po.jpg", Texture.class);
-        uglySean2 = assetManager.get("ugly face sean 2.png", Texture.class);
-        opm = assetManager.get("1pman.jpg", Texture.class);
-        man = assetManager.get("man.png", Texture.class);
+        enemyIdleTex = assetManager.get("enemyIdle_001.png", Texture.class);
+        enemyAtkTex = assetManager.get("enemyAttack_001.png", Texture.class);
+        portalTex = assetManager.get("portal_001.png", Texture.class);
+        wallTex = assetManager.get("wall2_001.png", Texture.class);
+        floorTex = assetManager.get("floor2_001.png", Texture.class);
+        mapTex = assetManager.get("map.jpg", Texture.class);
+        mapLocateTex = assetManager.get("mapLocate.jpg", Texture.class);
+        mapExitTex = assetManager.get("mapExit.jpg", Texture.class);
         optionsTex = assetManager.get("OptionsButton.jpg", Texture.class);
         optionsBackTex = assetManager.get("OptionsBackground.jpg", Texture.class);
         mainMenuTex = assetManager.get("MainMenu.jpg", Texture.class);
         saveGameTex = assetManager.get("SaveGame.jpg", Texture.class);
         quitGameTex = assetManager.get("QuitGame.jpg", Texture.class);
         resumeGameTex = assetManager.get("ResumeGame.jpg", Texture.class);
+        hpBarTex = assetManager.get("healthBar.jpg", Texture.class);
+        hpBarPivotTex = assetManager.get("healthBarPivot.jpg", Texture.class);
 
         if (this.game.getNewGame()) {
             SaveFile saveFile = new SaveFile();
@@ -193,10 +195,10 @@ public class GameplayScreen implements Screen, InputProcessor {
         }
 
         //initialize the HUD buttons and add them to the stage as actors
-        Sprite spriteBack = new Sprite(opm);
+        Sprite spriteBack = new Sprite(hpBarTex);
         spriteBack.setSize(cellWidth * 3, (cellHeight / 2));
         final SpriteDrawable spriteDrawableBack = new SpriteDrawable(spriteBack);
-        Sprite spriteKnob = new Sprite(man);
+        Sprite spriteKnob = new Sprite(hpBarPivotTex);
         spriteKnob.setSize(0, spriteBack.getHeight());
         SpriteDrawable spriteDrawableKnob = new SpriteDrawable(spriteKnob);
         hpBarStyle = new HPBarStyle(spriteDrawableBack, spriteDrawableKnob);
@@ -219,7 +221,7 @@ public class GameplayScreen implements Screen, InputProcessor {
         playerIdleStateTime = 0f;
 
         // Add the map button to the stage
-        mapButton = new MapHUD(chinPo, cellWidth, cellHeight);
+        mapButton = new MapHUD(mapTex, cellWidth, cellHeight);
         mapButton.setBounds(cellWidth * 8, cellHeight * 7, cellWidth, cellHeight);
         mapButton.addListener(new InputListener() {
             @Override
@@ -241,8 +243,8 @@ public class GameplayScreen implements Screen, InputProcessor {
                 camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
                 mapPressed = true;
                 // Adds a map exit button in map mode to the stage
-                mapExit = new MapExit(objection, cellWidth, cellHeight);
-                mapExit.setBounds(cellWidth * 9, cellHeight * 7, objection.getWidth(), objection.getHeight());
+                mapExit = new MapExit(mapExitTex, cellWidth, cellHeight);
+                mapExit.setBounds(cellWidth * 9, cellHeight * 7, cellWidth, cellHeight);
                 stage.addActor(mapExit);
                 mapExit.addListener(new InputListener() {
                     @Override
@@ -275,8 +277,8 @@ public class GameplayScreen implements Screen, InputProcessor {
                     }
                 });
                 // Adds a see player button in map mode
-                mapSeePlayer = new MapSeePlayer(chinPo, cellWidth, cellHeight);
-                mapSeePlayer.setBounds(cellWidth * 8, cellHeight * 7, chinPo.getWidth(), chinPo.getHeight());
+                mapSeePlayer = new MapSeePlayer(mapLocateTex, cellWidth, cellHeight);
+                mapSeePlayer.setBounds(cellWidth * 8, cellHeight * 7, cellWidth, cellHeight);
                 stage.addActor(mapSeePlayer);
                 mapSeePlayer.addListener(new InputListener() {
                     @Override
@@ -866,24 +868,32 @@ public class GameplayScreen implements Screen, InputProcessor {
         stage.getCamera().update();
         stage.getBatch().setProjectionMatrix(camera.combined);
 
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
         playerIdleStateTime += Gdx.graphics.getDeltaTime();
         playerIdleCurrentFrame = playerIdleAnimation.getKeyFrame(playerIdleStateTime, true);
 
         stage.getBatch().begin();
         if (gameOver) {
-            Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+            Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
         }
         else if (mapPressed) {
             for (int i = 0; i < mapDiscovered.size(); i++) {
                 if (newMap[(int) mapDiscovered.get(i).x][(int) mapDiscovered.get(i).y] == WALL) {
-                    stage.getBatch().draw(happyFace, mapDiscovered.get(i).x * TEXTURESIZE,
+                    //background
+                    Color c = stage.getBatch().getColor();
+                    stage.getBatch().setColor(c.r, c.g, c.b, 1f); //set alpha to 1
+                    stage.getBatch().draw(floorTex, mapDiscovered.get(i).x * TEXTURESIZE,
+                            mapDiscovered.get(i).y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
+                    //foreground
+                    c = stage.getBatch().getColor();
+                    stage.getBatch().setColor(c.r, c.g, c.b, 1f);//set alpha to 1
+                    stage.getBatch().draw(wallTex, mapDiscovered.get(i).x * TEXTURESIZE,
                             mapDiscovered.get(i).y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
                 } else if (newMap[(int) mapDiscovered.get(i).x][(int) mapDiscovered.get(i).y] == PLAYER) {
                     //background
                     Color c = stage.getBatch().getColor();
                     stage.getBatch().setColor(c.r, c.g, c.b, 1f); //set alpha to 1
-                    stage.getBatch().draw(badLogic, playerChar.x * TEXTURESIZE,
+                    stage.getBatch().draw(floorTex, playerChar.x * TEXTURESIZE,
                             playerChar.y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
                     //foreground
                     c = stage.getBatch().getColor();
@@ -897,10 +907,18 @@ public class GameplayScreen implements Screen, InputProcessor {
                             mapDiscovered.get(i).y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
                 }*/
                 else if (newMap[(int) mapDiscovered.get(i).x][(int) mapDiscovered.get(i).y] == EXIT) {
-                    stage.getBatch().draw(uglySean2, mapDiscovered.get(i).x * TEXTURESIZE,
+                    //background
+                    Color c = stage.getBatch().getColor();
+                    stage.getBatch().setColor(c.r, c.g, c.b, 1f); //set alpha to 1
+                    stage.getBatch().draw(floorTex, mapDiscovered.get(i).x * TEXTURESIZE,
+                            mapDiscovered.get(i).y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
+                    //foreground
+                    c = stage.getBatch().getColor();
+                    stage.getBatch().setColor(c.r, c.g, c.b, 1f);//set alpha to 0.3
+                    stage.getBatch().draw(portalTex, mapDiscovered.get(i).x * TEXTURESIZE,
                             mapDiscovered.get(i).y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
                 } else {
-                    stage.getBatch().draw(badLogic, mapDiscovered.get(i).x * TEXTURESIZE,
+                    stage.getBatch().draw(floorTex, mapDiscovered.get(i).x * TEXTURESIZE,
                             mapDiscovered.get(i).y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
                 }
             }
@@ -912,26 +930,49 @@ public class GameplayScreen implements Screen, InputProcessor {
                         // continue
                     }
                     else if (newMap[i][j] == WALL) {
-                        stage.getBatch().draw(happyFace, i * TEXTURESIZE, j * TEXTURESIZE,
+                        //background
+                        Color c = stage.getBatch().getColor();
+                        stage.getBatch().setColor(c.r, c.g, c.b, 1f); //set alpha to 1
+                        stage.getBatch().draw(floorTex, i * TEXTURESIZE, j * TEXTURESIZE,
+                                TEXTURESIZE, TEXTURESIZE);
+                        //foreground
+                        c = stage.getBatch().getColor();
+                        stage.getBatch().setColor(c.r, c.g, c.b, 1f);//set alpha to 1
+                        stage.getBatch().draw(wallTex, i * TEXTURESIZE, j * TEXTURESIZE,
                                 TEXTURESIZE, TEXTURESIZE);
                     }
                     else if (newMap[i][j] == PLAYER) {
                         if(attackedEnemy) {
                             if(playerChar.getX() > enemyX) {
+                                //background
+                                Color c = stage.getBatch().getColor();
+                                stage.getBatch().setColor(c.r, c.g, c.b, 1f); //set alpha to 1
+                                stage.getBatch().draw(floorTex, playerChar.x * TEXTURESIZE,
+                                        playerChar.y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
+                                //foreground
+                                c = stage.getBatch().getColor();
+                                stage.getBatch().setColor(c.r, c.g, c.b, 1f);//set alpha to 0.3
                                 stage.getBatch().draw(playerAtkLeftTex, playerChar.x * TEXTURESIZE,
                                         playerChar.y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
                             }
                             else {
+                                //background
+                                Color c = stage.getBatch().getColor();
+                                stage.getBatch().setColor(c.r, c.g, c.b, 1f); //set alpha to 1
+                                stage.getBatch().draw(floorTex, playerChar.x * TEXTURESIZE,
+                                        playerChar.y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
+                                //foreground
+                                c = stage.getBatch().getColor();
+                                stage.getBatch().setColor(c.r, c.g, c.b, 1f);//set alpha to 0.3
                                 stage.getBatch().draw(playerAtkRightTex, playerChar.x * TEXTURESIZE,
                                         playerChar.y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
                             }
-
                         }
                         else {
                             //background
                             Color c = stage.getBatch().getColor();
                             stage.getBatch().setColor(c.r, c.g, c.b, 1f); //set alpha to 1
-                            stage.getBatch().draw(badLogic, playerChar.x * TEXTURESIZE,
+                            stage.getBatch().draw(floorTex, playerChar.x * TEXTURESIZE,
                                     playerChar.y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
                             //foreground
                             c = stage.getBatch().getColor();
@@ -941,15 +982,45 @@ public class GameplayScreen implements Screen, InputProcessor {
                         }
                     }
                     else if (newMap[i][j] == ENEMY) {
-                        stage.getBatch().draw(neutralFace, i * TEXTURESIZE, j * TEXTURESIZE,
-                                TEXTURESIZE, TEXTURESIZE);
+                        if(attackedPlayer) {
+                            //background
+                            Color c = stage.getBatch().getColor();
+                            stage.getBatch().setColor(c.r, c.g, c.b, 1f); //set alpha to 1
+                            stage.getBatch().draw(floorTex, i * TEXTURESIZE, j * TEXTURESIZE,
+                                    TEXTURESIZE, TEXTURESIZE);
+                            //foreground
+                            c = stage.getBatch().getColor();
+                            stage.getBatch().setColor(c.r, c.g, c.b, 1f);//set alpha to 0.3
+                            stage.getBatch().draw(enemyAtkTex, i * TEXTURESIZE, j * TEXTURESIZE,
+                                    TEXTURESIZE, TEXTURESIZE);
+                        }
+                        else {
+                            //background
+                            Color c = stage.getBatch().getColor();
+                            stage.getBatch().setColor(c.r, c.g, c.b, 1f); //set alpha to 1
+                            stage.getBatch().draw(floorTex, i * TEXTURESIZE, j * TEXTURESIZE,
+                                    TEXTURESIZE, TEXTURESIZE);
+                            //foreground
+                            c = stage.getBatch().getColor();
+                            stage.getBatch().setColor(c.r, c.g, c.b, 1f);//set alpha to 0.3
+                            stage.getBatch().draw(enemyIdleTex, i * TEXTURESIZE, j * TEXTURESIZE,
+                                    TEXTURESIZE, TEXTURESIZE);
+                        }
                     }
                     else if (newMap[i][j] == EXIT) {
-                        stage.getBatch().draw(uglySean2, i * TEXTURESIZE, j * TEXTURESIZE,
+                        //background
+                        Color c = stage.getBatch().getColor();
+                        stage.getBatch().setColor(c.r, c.g, c.b, 1f); //set alpha to 1
+                        stage.getBatch().draw(floorTex, i * TEXTURESIZE, j * TEXTURESIZE,
+                                TEXTURESIZE, TEXTURESIZE);
+                        //foreground
+                        c = stage.getBatch().getColor();
+                        stage.getBatch().setColor(c.r, c.g, c.b, 1f);//set alpha to 0.3
+                        stage.getBatch().draw(portalTex, i * TEXTURESIZE, j * TEXTURESIZE,
                                 TEXTURESIZE, TEXTURESIZE);
                     }
                     else {
-                        stage.getBatch().draw(badLogic, i * TEXTURESIZE, j * TEXTURESIZE,
+                        stage.getBatch().draw(floorTex, i * TEXTURESIZE, j * TEXTURESIZE,
                                 TEXTURESIZE, TEXTURESIZE);
                     }
                 }
@@ -1057,6 +1128,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                                 }
                             }
                             else if (newMap[(int) worldTouch.x][(int) worldTouch.y] == EXIT) {
+                                attackedEnemy = false;
                                 assetManager.get("Floor Climb.mp3", Sound.class).play();
                                 floorLevel = floorLevel + 1;
                                 recreateWorld();
@@ -1068,6 +1140,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                                 saveData.saveSaveData();
                             }
                             else if (newMap[(int) worldTouch.x][(int) worldTouch.y] == FLOOR) {
+                                attackedEnemy = false;
                                 newMap[playerChar.x][playerChar.y] = FLOOR;
                                 playerChar.x = (int) worldTouch.x;
                                 playerChar.y = (int) worldTouch.y;
@@ -1096,9 +1169,11 @@ public class GameplayScreen implements Screen, InputProcessor {
                                 //then move onto the next enemy in the array
                                 path = aStarPathFinding(startNode, goalNode);
                                 if (path == null || path.size == 0) {
+                                    attackedPlayer = true;
                                     // continue
                                 }
                                 else if (path.size == 1) {
+                                    attackedPlayer = true;
                                     assetManager.get("Attacked.mp3", Sound.class).play(0.5f);
                                     playerChar.takeDamage(enemies.get(i).ATK);
                                     playerHPBar.setValue(playerChar.HP);
@@ -1119,6 +1194,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                                     }
                                 }
                                 else {
+                                    attackedPlayer = false;
                                     //move the enemy units one tile closer to the player
                                     newMap[enemies.get(i).x][enemies.get(i).y] = FLOOR;
                                     enemies.get(i).x = path.get(1).getCurrentX();
