@@ -203,8 +203,6 @@ public class SaveFile {
             saveFileHandle.writeString(Integer.toString(savePlayer.y) + ",", true);
             saveFileHandle.writeString(Integer.toString(savePlayer.HP) + ",", true);
             saveFileHandle.writeString(Integer.toString(savePlayer.ATK) + ",", true);
-            saveFileHandle.writeString(Integer.toString(savePlayer.DEF) + ",", true);
-            saveFileHandle.writeString(Integer.toString(savePlayer.LUK) + ",", true);
             saveFileHandle.writeString(Integer.toString(savePlayer.hpBeforeSave), true);
             System.out.println("Wrote to playerFile");
         }
@@ -228,10 +226,8 @@ public class SaveFile {
             int y = Integer.parseInt(fileTextSplit[1]);
             int HP = Integer.parseInt(fileTextSplit[2]);
             int ATK = Integer.parseInt(fileTextSplit[3]);
-            int DEF = Integer.parseInt(fileTextSplit[4]);
-            int LUK = Integer.parseInt(fileTextSplit[5]);
-            int hpBeforeSave = Integer.parseInt(fileTextSplit[6]);
-            savePlayer = new PlayerCharacter(HP, ATK, DEF, LUK);
+            int hpBeforeSave = Integer.parseInt(fileTextSplit[4]);
+            savePlayer = new PlayerCharacter(HP, ATK);
             savePlayer.setHpBeforeSave(hpBeforeSave);
             savePlayer.x = x;
             savePlayer.y = y;
@@ -255,8 +251,6 @@ public class SaveFile {
                 saveFileHandle.writeString(Float.toString(saveEnemies.get(i).getY()) + ",", true);
                 saveFileHandle.writeString(Float.toString(saveEnemies.get(i).HP)+ ",", true);
                 saveFileHandle.writeString(Float.toString(saveEnemies.get(i).ATK) + ",", true);
-                saveFileHandle.writeString(Float.toString(saveEnemies.get(i).DEF) + ",", true);
-                saveFileHandle.writeString(Float.toString(saveEnemies.get(i).LUK) + ",", true);
             }
             saveFileHandle.writeString(Integer.toString(saveEnemies.size), true);
         } catch (Exception e) {
@@ -284,10 +278,8 @@ public class SaveFile {
                 int y = (int) Float.parseFloat(fileTextSplit[counter + 1]);
                 int HP = (int) Float.parseFloat(fileTextSplit[counter + 2]);
                 int ATK = (int) Float.parseFloat(fileTextSplit[counter + 3]);
-                int DEF = (int) Float.parseFloat(fileTextSplit[counter + 4]);
-                int LUK = (int) Float.parseFloat(fileTextSplit[counter + 5]);
-                counter = counter + 6;
-                saveEnemies.add(new standardEnemy(HP, ATK, DEF, LUK));
+                counter = counter + 4;
+                saveEnemies.add(new standardEnemy(HP, ATK));
                 saveEnemies.get(i).x = x;
                 saveEnemies.get(i).y = y;
             }

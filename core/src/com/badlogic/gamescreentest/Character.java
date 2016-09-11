@@ -9,8 +9,6 @@ public class Character {
 
     int HP;
     int ATK;
-    int DEF;
-    int LUK;
 
     public int getX() {
         return x;
@@ -21,7 +19,7 @@ public class Character {
     }
 
     public void takeDamage(int dmg) {
-        this.HP = (this.HP + this.DEF) - dmg;
+        this.HP = this.HP - dmg;
     }
 
     public boolean isDead() {

@@ -4,11 +4,9 @@ package com.badlogic.gamescreentest;
  * Created by admin on 7/11/2016.
  */
 public class standardEnemy extends Character {
-    public standardEnemy(int health, int attack, int defence, int luck) {
+    public standardEnemy(int health, int attack) {
         this.HP = health;
         this.ATK = attack;
-        this.DEF = defence;
-        this.LUK = luck;
     }
 
     @Override

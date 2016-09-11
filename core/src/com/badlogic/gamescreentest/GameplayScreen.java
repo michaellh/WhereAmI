@@ -487,7 +487,6 @@ public class GameplayScreen implements Screen, InputProcessor {
         }
 
         float floorCovered = ((floodMapCount - mapWallCount)/ (float)(tiledMapWidth * tiledMapHeight));
-        //System.out.println(floorCovered);
         if(floorCovered > 0.45) {
             return newMap;
         }
@@ -598,13 +597,11 @@ public class GameplayScreen implements Screen, InputProcessor {
         mapDiscovered = new ArrayList<Vector2>();
 
         //reinitialize the player character and enemy stats
-        playerChar = new PlayerCharacter(randInt(10, 15), 5,
-                0, randInt(0, 10));
+        playerChar = new PlayerCharacter(15, 1);
         //initialize a random-sized array of standard enemies and their stats
         enemies = new Array<standardEnemy>();
         for (int i = 0; i < (1 + floorLevel); i++) {
-            enemies.add(new standardEnemy(randInt(10, 15), 1,
-                    0, randInt(0, 10)));
+            enemies.add(new standardEnemy(3, 1));
         }
 
         //generate a new world map
@@ -640,31 +637,6 @@ public class GameplayScreen implements Screen, InputProcessor {
         }
         newMap[ranPosX][ranPosY] = EXIT;
         System.out.println("EXIT: " + ranPosX + " " + ranPosY);
-
-        /*
-        System.out.println("----------------------------------------------");
-        for (int i = tiledMapHeight - 1; i > 0; i--) {
-            for (int j = 0; j < tiledMapWidth; j++) {
-                if(newMap[j][i] == FLOOR) {
-                    System.out.print("!");
-                }
-                else if(newMap[j][i] == WALL) {
-                    System.out.print("*");
-                }
-                else if(newMap[j][i] == ENEMY) {
-                    System.out.print("E");
-                }
-                else if(newMap[j][i] == PLAYER) {
-                    System.out.print("P");
-                }
-                else if(newMap[j][i] == EXIT) {
-                    System.out.print("X");
-                }
-                //System.out.print(newMap[j][i]);
-            }
-            System.out.println();
-        }
-        */
     }
 
     /*
