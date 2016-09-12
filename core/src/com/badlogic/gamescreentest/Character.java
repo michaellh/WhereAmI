@@ -10,12 +10,22 @@ public class Character {
     int HP;
     int ATK;
 
+    int state;
+
     public int getX() {
         return x;
     }
 
     public int getY() {
         return y;
+    }
+
+    public int getState() {
+        return state;
+    };
+
+    public void setState(int change) {
+        state = change;
     }
 
     public void takeDamage(int dmg) {
