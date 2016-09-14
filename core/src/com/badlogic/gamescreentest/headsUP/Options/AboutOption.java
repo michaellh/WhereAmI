@@ -5,21 +5,21 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 
 /**
- * Created by admin on 9/5/2016.
+ * Created by admin on 9/13/2016.
  */
-public class SaveGameOption extends Actor {
+public class AboutOption extends Actor {
     Texture img;
     float x;
     float y;
     float width;
     float height;
 
-    public SaveGameOption(Texture texture, float cellWidth, float cellHeight) {
+    public AboutOption(Texture texture, float cellWidth, float cellHeight) {
         img = texture;
         width = cellWidth * 7;
         height = cellHeight;
         x = cellWidth * 1.5f;
-        y = cellHeight * 4;
+        y = cellHeight * 3;
     }
 
     @Override

@@ -5,6 +5,7 @@ import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 
+import java.io.File;
 import java.util.ArrayList;
 
 /**
@@ -14,6 +15,7 @@ public class SaveFile {
     int mapWidth;
     int mapHeight;
     int saveFloorLevel;
+    int highScore;
     int[][] saveMap;
     ArrayList<Vector2> saveMapDiscovered;
     Array<standardEnemy> saveEnemies;
@@ -31,6 +33,36 @@ public class SaveFile {
         mapWidth = tiledMapWidth;
         mapHeight = tiledMapHeight;
         saveFloorLevel = level;
+    }
+
+    public void writeHighScore(int hs) {
+        if(fileExists("android/assets/highScore.txt")) {
+            highScore = SaveFile.this.readHighScore();
+            FileHandle saveFileHandle = Gdx.files.local("android/assets/highScore.txt");
+            saveFileHandle.delete();
+            if(highScore < hs) {
+                highScore = hs;
+            }
+        }
+        else {
+            highScore = hs;
+        }
+        try {
+            FileHandle saveFileHandle = Gdx.files.local("android/assets/highScore.txt");
+            saveFileHandle.writeString(Integer.toString(highScore) + ",", true);
+        }
+        catch (Exception e) {
+            System.out.println("Error when writing to high score file!");
+        }
+    }
+
+    public int readHighScore() {
+        FileHandle saveHighScoreFile = Gdx.files.local("android/assets/highScore.txt");
+        String fileText = saveHighScoreFile.readString();
+        String[] fileTextSplit = fileText.split(",");
+        highScore = Integer.parseInt(fileTextSplit[fileTextSplit.length - 1]);
+        System.out.println("Read highscore");
+        return highScore;
     }
 
     public boolean fileExists(String file) {

@@ -1,9 +1,10 @@
 package com.badlogic.gamescreentest;
 
 import com.badlogic.gamescreentest.headsUP.ArrowTouchPad.Arrow;
-import com.badlogic.gamescreentest.headsUP.AttackButton;
+import com.badlogic.gamescreentest.headsUP.ArrowTouchPad.AttackButton;
+import com.badlogic.gamescreentest.headsUP.Options.AboutOption;
+import com.badlogic.gamescreentest.headsUP.Options.AboutSection;
 import com.badlogic.gamescreentest.headsUP.Options.MainMenuOption;
-import com.badlogic.gamescreentest.headsUP.Options.OptionsBackground;
 import com.badlogic.gamescreentest.headsUP.Options.QuitGameOption;
 import com.badlogic.gamescreentest.headsUP.Options.ResumeGameOption;
 import com.badlogic.gamescreentest.headsUP.Map.MapExit;
@@ -26,7 +27,6 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -41,58 +41,43 @@ import java.util.Arrays;
 import java.util.PriorityQueue;
 import java.util.Random;
 
-/*
-Decisions Kevin MacLeod (incompetech.com)
-Licensed under Creative Commons: By Attribution 3.0 License
-http://creativecommons.org/licenses/by/3.0/
-*/
-
-/*
-Dying Sound by Mike Koenig (http://soundbible.com/810-Dying.html)
-Licensed under Creative Commons: By Attribution 3.0 License
-http://creativecommons.org/licenses/by/3.0/
- */
-
-/*
-1 Person Cheering Sound by Jett Rifkin (http://soundbible.com/2103-1-Person-Cheering.html)
-Licensed under Creative Commons: By Attribution 3.0 License
-http://creativecommons.org/licenses/by/3.0/
- */
-
-/**
- * Created by admin on 6/8/2016.
- */
 public class GameplayScreen implements Screen, InputProcessor {
     final GameScreen game;
     OrthographicCamera camera;
     Stage stage;
     AssetManager assetManager;
-    Texture hpBarTex, hpBarPivotTex, attackButtonTex,
-            mapExitTex, mapTex, optionsTex, mapLocateTex,
-            optionsBackTex, mainMenuTex, quitGameTex, resumeGameTex,
+    Texture hpBarTex, hpBarPivotTex, mapExitTex, mapTex, optionsTex, mapLocateTex,
+            mainMenuTex, quitGameTex, resumeGameTex, aboutTex, aboutSectionTex,
             playerIdleTex, playerAtkRightTex, playerAtkLeftTex,
             enemyIdleTex, enemyAtkTex, portalTex, wallTex, floorTex,
-            arrowUpTex, arrowRightTex, arrowDownTex, arrowLeftTex;
+            arrowUpTex, arrowRightTex, arrowDownTex, arrowLeftTex,
+            atkTopRightTex, atkBotRightTex, atkBotLeftTex, atkTopLeftTex,
+            atkUpTex, atkRightTex, atkDownTex, atkLeftTex,
+            arrowTopRightTex, arrowBotRightTex, arrowBotLeftTex, arrowTopLeftTex,
+            gameOverTex;
     Random rand;
 
     gameOptions optButton;
-    OptionsBackground optionsBackground;
     ResumeGameOption resumeGameOption;
     MainMenuOption mainMenuOption;
+    AboutOption aboutOption;
+    AboutSection aboutSection;
     QuitGameOption quitGameOption;
 
     MapHUD mapButton;
     MapExit mapExit;
     MapSeePlayer mapSeePlayer;
 
+    GameOver gameOverActor;
+
     com.badlogic.gamescreentest.headsUP.PlayerHealthBar.HPBarStyle hpBarStyle;
     com.badlogic.gamescreentest.headsUP.PlayerHealthBar.PlayerHPBar playerHPBar;
     PlayerCharacter playerChar;
 
     Arrow arrowUp, arrowTopRight, arrowRight, arrowBotRight, arrowDown,
-            arrowBotLeft, arrowLeft, arrowTopleft;
+            arrowBotLeft, arrowLeft, arrowTopLeft;
     AttackButton attackUpButton, attackTopRightButton, attackRightButton, attackDownButton,
-            attackBotLeftButton, attackLeftButton, attackTopLeftButton;
+            attackBotRightButton, attackBotLeftButton, attackLeftButton, attackTopLeftButton;
 
     Animation playerIdleAnimation;
     TextureRegion[] playerIdleFrames;
@@ -117,7 +102,6 @@ public class GameplayScreen implements Screen, InputProcessor {
 
     ArrayList<Vector2> mapDiscovered;
     Vector2 userTouch, dragOld, dragNew;
-    Vector3 worldTouch;
 
     Music worldMusic;
 
@@ -163,17 +147,30 @@ public class GameplayScreen implements Screen, InputProcessor {
         mapLocateTex = assetManager.get("mapLocate.jpg", Texture.class);
         mapExitTex = assetManager.get("mapExit.jpg", Texture.class);
         optionsTex = assetManager.get("OptionsButton.jpg", Texture.class);
-        optionsBackTex = assetManager.get("OptionsBackground.jpg", Texture.class);
         mainMenuTex = assetManager.get("MainMenu.jpg", Texture.class);
         quitGameTex = assetManager.get("QuitGame.jpg", Texture.class);
+        aboutTex = assetManager.get("AboutOption.jpg", Texture.class);
+        aboutSectionTex = assetManager.get("AboutSection.jpg", Texture.class);
         resumeGameTex = assetManager.get("ResumeGame.jpg", Texture.class);
         hpBarTex = assetManager.get("healthBar.jpg", Texture.class);
         hpBarPivotTex = assetManager.get("healthBarPivot.jpg", Texture.class);
         arrowUpTex = assetManager.get("arrowUp.png", Texture.class);
+        arrowTopRightTex = assetManager.get("arrowTopRight.png", Texture.class);
         arrowRightTex = assetManager.get("arrowRight.png", Texture.class);
+        arrowBotRightTex = assetManager.get("arrowBotRight.png", Texture.class);
         arrowDownTex = assetManager.get("arrowDown.png", Texture.class);
+        arrowBotLeftTex = assetManager.get("arrowBotLeft.png", Texture.class);
         arrowLeftTex = assetManager.get("arrowLeft.png", Texture.class);
-        attackButtonTex = assetManager.get("attackButton.png", Texture.class);
+        arrowTopLeftTex = assetManager.get("arrowTopLeft.png", Texture.class);
+        atkUpTex = assetManager.get("attackUpButton.png", Texture.class);
+        atkTopRightTex = assetManager.get("attackTopRightButton.png", Texture.class);
+        atkRightTex = assetManager.get("attackRightButton.png", Texture.class);
+        atkBotRightTex = assetManager.get("attackBotRightButton.png", Texture.class);
+        atkDownTex = assetManager.get("attackDownButton.png", Texture.class);
+        atkBotLeftTex = assetManager.get("attackBotLeftButton.png", Texture.class);
+        atkLeftTex = assetManager.get("attackLeftButton.png", Texture.class);
+        atkTopLeftTex = assetManager.get("attackTopLeftButton.png", Texture.class);
+        gameOverTex = assetManager.get("GameOver.jpg", Texture.class);
 
         if (this.game.getNewGame()) {
             SaveFile saveFile = new SaveFile();
@@ -236,15 +233,16 @@ public class GameplayScreen implements Screen, InputProcessor {
             @Override
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                 assetManager.get("Button Push.mp3", Sound.class).play();
-                System.out.println("map touched up");
                 // Temporarily disable the HP bar, map mode button, options button, and menu button
                 for (int i = 0; i < stage.getActors().size; i++) {
                     stage.getActors().get(i).setVisible(false);
                 }
+
                 // Make the camera view the entire world instead of the window in game mode
                 camera.setToOrtho(false, screenWidth, screenHeight);
                 camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
                 mapPressed = true;
+
                 // Adds a map exit button in map mode to the stage
                 mapExit = new MapExit(mapExitTex, cellWidth, cellHeight);
                 mapExit.setBounds(cellWidth * 9, cellHeight * 7, cellWidth, cellHeight);
@@ -259,9 +257,11 @@ public class GameplayScreen implements Screen, InputProcessor {
                     public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                         assetManager.get("Button Push.mp3", Sound.class).play();
                         mapPressed = false;
+
                         // Sets the camera back to game mode view
                         camera.setToOrtho(false, 14 * TEXTURESIZE, 10 * TEXTURESIZE);
                         camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
+
                         // Disable the find player button and the map exit button
                         int mapExitLocation = stage.getActors().indexOf(mapExit, true);
                         stage.getActors().get(mapExitLocation).addAction(Actions.removeActor());
@@ -276,18 +276,9 @@ public class GameplayScreen implements Screen, InputProcessor {
                         int hpBarIndex = stage.getActors().indexOf(playerHPBar, true);
                         stage.getActors().get(hpBarIndex).setVisible(true);
                         detectChangeArrows();
-                        /*
-                        int upDPad = stage.getActors().indexOf(arrowUp, true);
-                        stage.getActors().get(upDPad).setVisible(true);
-                        int rightDPad = stage.getActors().indexOf(arrowRight, true);
-                        stage.getActors().get(rightDPad).setVisible(true);
-                        int downDPad = stage.getActors().indexOf(arrowDown, true);
-                        stage.getActors().get(downDPad).setVisible(true);
-                        int leftDPad = stage.getActors().indexOf(arrowLeft, true);
-                        stage.getActors().get(leftDPad).setVisible(true);
-                        */
                     }
                 });
+
                 // Adds a see player button in map mode
                 mapSeePlayer = new MapSeePlayer(mapLocateTex, cellWidth, cellHeight);
                 mapSeePlayer.setBounds(cellWidth * 8, cellHeight * 7, cellWidth, cellHeight);
@@ -313,21 +304,16 @@ public class GameplayScreen implements Screen, InputProcessor {
         optButton.addListener(new InputListener() {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                System.out.println("options touched down");
                 return true;
             }
 
             @Override
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                 assetManager.get("Button Push.mp3", Sound.class).play();
-                System.out.println("options touched up");
                 options = true;
                 for (int i = 0; i < stage.getActors().size; i++) {
                     stage.getActors().get(i).setVisible(false);
                 }
-
-                optionsBackground = new OptionsBackground(optionsBackTex, cellWidth, cellHeight);
-                stage.addActor(optionsBackground);
 
                 resumeGameOption = new ResumeGameOption(resumeGameTex, cellWidth, cellHeight);
                 resumeGameOption.setBounds(cellWidth * 1.5f, cellHeight * 5, cellWidth * 7, cellHeight);
@@ -340,18 +326,19 @@ public class GameplayScreen implements Screen, InputProcessor {
                     @Override
                     public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                         assetManager.get("Button Push.mp3", Sound.class).play();
-                        int optBackIndex = stage.getActors().indexOf(optionsBackground, true);
-                        stage.getActors().get(optBackIndex).addAction(Actions.removeActor());
-                        int optResumeIndex = stage.getActors().indexOf(resumeGameOption, true);
-                        stage.getActors().get(optResumeIndex).addAction(Actions.removeActor());
-                        int optMenuIndex = stage.getActors().indexOf(mainMenuOption, true);
-                        stage.getActors().get(optMenuIndex).addAction(Actions.removeActor());
-                        int optQuitIndex = stage.getActors().indexOf(quitGameOption, true);
-                        stage.getActors().get(optQuitIndex).addAction(Actions.removeActor());
 
                         for (int i = 0; i < stage.getActors().size; i++) {
                             stage.getActors().get(i).setVisible(true);
                         }
+
+                        int optResumeIndex = stage.getActors().indexOf(resumeGameOption, true);
+                        stage.getActors().get(optResumeIndex).addAction(Actions.removeActor());
+                        int optMenuIndex = stage.getActors().indexOf(mainMenuOption, true);
+                        stage.getActors().get(optMenuIndex).addAction(Actions.removeActor());
+                        int optAboutIndex = stage.getActors().indexOf(aboutOption, true);
+                        stage.getActors().get(optAboutIndex).addAction(Actions.removeActor());
+                        int optQuitIndex = stage.getActors().indexOf(quitGameOption, true);
+                        stage.getActors().get(optQuitIndex).addAction(Actions.removeActor());
 
                         detectChangeArrows();
 
@@ -361,7 +348,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                 stage.addActor(resumeGameOption);
 
                 mainMenuOption = new MainMenuOption(mainMenuTex, cellWidth, cellHeight);
-                mainMenuOption.setBounds(cellWidth * 1.5f, cellHeight * 3, cellWidth * 7, cellHeight);
+                mainMenuOption.setBounds(cellWidth * 1.5f, cellHeight * 4, cellWidth * 7, cellHeight);
                 mainMenuOption.addListener(new InputListener() {
                     @Override
                     public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
@@ -379,10 +366,43 @@ public class GameplayScreen implements Screen, InputProcessor {
                         for (int actors = 0; actors < stage.getActors().size; actors++) {
                             stage.getActors().get(actors).addAction(Actions.removeActor());
                         }
+                        enemies.clear();
+                        mapDiscovered.clear();
+                        stage.dispose();
                         game.setScreen(new MainMenuScreen(game));
                     }
                 });
                 stage.addActor(mainMenuOption);
+
+                aboutOption = new AboutOption(aboutTex, cellWidth, cellHeight);
+                aboutOption.setBounds(cellWidth * 1.5f, cellHeight * 3, cellWidth * 7, cellHeight);
+                aboutOption.addListener(new InputListener() {
+                    @Override
+                    public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                        return true;
+                    }
+
+                    @Override
+                    public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                        assetManager.get("Button Push.mp3", Sound.class).play();
+                        aboutSection = new AboutSection(aboutSectionTex, cellWidth, cellHeight);
+                        aboutSection.setBounds(0, 0, screenWidth, screenHeight);
+                        aboutSection.addListener(new InputListener() {
+                            @Override
+                            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                                return true;
+                            }
+
+                            @Override
+                            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                                assetManager.get("Button Push.mp3", Sound.class).play();
+                                aboutSection.addAction(Actions.removeActor());
+                            }
+                        });
+                        stage.addActor(aboutSection);
+                    }
+                });
+                stage.addActor(aboutOption);
 
                 quitGameOption = new QuitGameOption(quitGameTex, cellWidth, cellHeight);
                 quitGameOption.setBounds(cellWidth * 1.5f, cellHeight * 2, cellWidth * 7, cellHeight);
@@ -398,6 +418,8 @@ public class GameplayScreen implements Screen, InputProcessor {
                         SaveFile saveFile = new SaveFile(newMap, mapDiscovered, enemies, playerChar,
                                 tiledMapWidth, tiledMapHeight, floorLevel);
                         saveFile.saveSaveData();
+                        enemies.clear();
+                        mapDiscovered.clear();
                         dispose();
                         Gdx.app.exit();
                     }
@@ -420,9 +442,11 @@ public class GameplayScreen implements Screen, InputProcessor {
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                 assetManager.get("Button Push.mp3", Sound.class).play();
                 if((playerChar.getY() + 1) >= tiledMapHeight) {
+                    enemyTurn();
+                    detectChangeArrows();
                     return;
                 }
-                if(newMap[playerChar.getX()][playerChar.getY() + 1] == FLOOR) {
+                else if(newMap[playerChar.getX()][playerChar.getY() + 1] == FLOOR) {
                     attackedEnemy = false;
                     newMap[playerChar.getX()][playerChar.getY()] = FLOOR;
                     playerChar.y = playerChar.getY() + 1;
@@ -449,7 +473,7 @@ public class GameplayScreen implements Screen, InputProcessor {
         stage.addActor(arrowUp);
 
         // Up attack button
-        attackUpButton = new AttackButton(attackButtonTex, cellWidth, cellHeight * 2, cellWidth, cellHeight);
+        attackUpButton = new AttackButton(atkUpTex, cellWidth, cellHeight * 2, cellWidth, cellHeight);
         attackUpButton.setBounds(cellWidth, cellHeight * 2, cellWidth, cellHeight);
         attackUpButton.addListener(new InputListener() {
             @Override
@@ -461,7 +485,7 @@ public class GameplayScreen implements Screen, InputProcessor {
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                 for (int i = 0; i < enemies.size; i++) {
                     if (playerChar.getX() == enemies.get(i).getX() &&
-                            playerChar.getY() + 1 == enemies.get(i).getY()) {
+                            (playerChar.getY() + 1) == enemies.get(i).getY()) {
                         enemyX = enemies.get(i).getX();
                         attackedEnemy = true;
                         enemies.get(i).takeDamage(playerChar.ATK);
@@ -484,6 +508,87 @@ public class GameplayScreen implements Screen, InputProcessor {
         attackUpButton.setVisible(false);
         stage.addActor(attackUpButton);
 
+        // Top right arrow touch key
+        arrowTopRight = new Arrow(arrowTopRightTex, cellWidth * 2, cellHeight * 2, cellWidth, cellHeight);
+        arrowTopRight.setBounds(cellWidth * 2, cellHeight * 2, cellWidth, cellHeight);
+        arrowTopRight.addListener(new InputListener() {
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                return true;
+            }
+
+            @Override
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                assetManager.get("Button Push.mp3", Sound.class).play();
+                if((playerChar.getY() + 1 >= tiledMapHeight) ||
+                        (playerChar.getX() + 1 >= tiledMapWidth)) {
+                    enemyTurn();
+                    detectChangeArrows();
+                    return;
+                }
+                if(newMap[playerChar.getX() + 1][playerChar.getY() + 1] == FLOOR) {
+                    attackedEnemy = false;
+                    newMap[playerChar.getX()][playerChar.getY()] = FLOOR;
+                    playerChar.x = playerChar.getX() + 1;
+                    playerChar.y = playerChar.getY() + 1;
+                    newMap[playerChar.x][playerChar.y] = PLAYER;
+                    updateMapDiscovered();
+                    camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
+                }
+                else if(newMap[playerChar.getX() + 1][playerChar.getY() + 1] == EXIT) {
+                    attackedEnemy = false;
+                    assetManager.get("Floor Climb.mp3", Sound.class).play();
+                    floorLevel = floorLevel + 1;
+                    recreateWorld();
+                    playerChar.setHpBeforeSave(playerChar.HP);
+                    playerHPBar.setRange(0, playerChar.HP);
+                    playerHPBar.setValue(playerChar.HP);
+                    SaveFile saveData = new SaveFile(newMap, mapDiscovered, enemies, playerChar,
+                            tiledMapWidth, tiledMapHeight, floorLevel);
+                    saveData.saveSaveData();
+                }
+                enemyTurn();
+                detectChangeArrows();
+            }
+        });
+        stage.addActor(arrowTopRight);
+
+        // Up attack button
+        attackTopRightButton = new AttackButton(atkTopRightTex, cellWidth * 2, cellHeight * 2, cellWidth, cellHeight);
+        attackTopRightButton.setBounds(cellWidth * 2, cellHeight * 2, cellWidth, cellHeight);
+        attackTopRightButton.addListener(new InputListener() {
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                return true;
+            }
+
+            @Override
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                for (int i = 0; i < enemies.size; i++) {
+                    if (playerChar.getX() + 1 == enemies.get(i).getX() &&
+                            (playerChar.getY() + 1) == enemies.get(i).getY()) {
+                        enemyX = enemies.get(i).getX();
+                        attackedEnemy = true;
+                        enemies.get(i).takeDamage(playerChar.ATK);
+                        if (enemies.get(i).isDead()) {
+                            playerChar.HP = playerChar.HP + 1;
+                            playerHPBar.setValue(playerChar.HP);
+                            assetManager.get("Dying.mp3", Sound.class).play();
+                            newMap[enemies.get(i).getX()][enemies.get(i).getY()] = FLOOR;
+                            enemies.removeIndex(i);
+                            attackTopRightButton.setVisible(false);
+                            arrowTopRight.setVisible(true);
+                        }
+                        assetManager.get("Pain.mp3", Sound.class).play(0.1f);
+                    }
+                }
+                enemyTurn();
+                detectChangeArrows();
+            }
+        });
+        attackTopRightButton.setVisible(false);
+        stage.addActor(attackTopRightButton);
+
         // Right arrow touch key
         arrowRight = new Arrow(arrowRightTex, cellWidth * 2, cellHeight, cellWidth, cellHeight);
         arrowRight.setBounds(cellWidth * 2, cellHeight, cellWidth, cellHeight);
@@ -497,6 +602,8 @@ public class GameplayScreen implements Screen, InputProcessor {
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                 assetManager.get("Button Push.mp3", Sound.class).play();
                 if((playerChar.getX() + 1) >= tiledMapWidth) {
+                    enemyTurn();
+                    detectChangeArrows();
                     return;
                 }
                 if(newMap[playerChar.getX() + 1][playerChar.getY()] == FLOOR) {
@@ -526,7 +633,7 @@ public class GameplayScreen implements Screen, InputProcessor {
         stage.addActor(arrowRight);
 
         // Right attack button
-        attackRightButton = new AttackButton(attackButtonTex, cellWidth * 2, cellHeight, cellWidth, cellHeight);
+        attackRightButton = new AttackButton(atkRightTex, cellWidth * 2, cellHeight, cellWidth, cellHeight);
         attackRightButton.setBounds(cellWidth * 2, cellHeight, cellWidth, cellHeight);
         attackRightButton.addListener(new InputListener() {
             @Override
@@ -561,6 +668,87 @@ public class GameplayScreen implements Screen, InputProcessor {
         attackRightButton.setVisible(false);
         stage.addActor(attackRightButton);
 
+        // Bot right arrow touch key
+        arrowBotRight = new Arrow(arrowBotRightTex, cellWidth * 2, 0, cellWidth, cellHeight);
+        arrowBotRight.setBounds(cellWidth * 2, 0, cellWidth, cellHeight);
+        arrowBotRight.addListener(new InputListener() {
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                return true;
+            }
+
+            @Override
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                assetManager.get("Button Push.mp3", Sound.class).play();
+                if((playerChar.getY() - 1 < 0) ||
+                        (playerChar.getX() + 1 >= tiledMapWidth)) {
+                    enemyTurn();
+                    detectChangeArrows();
+                    return;
+                }
+                if(newMap[playerChar.getX() + 1][playerChar.getY() - 1] == FLOOR) {
+                    attackedEnemy = false;
+                    newMap[playerChar.getX()][playerChar.getY()] = FLOOR;
+                    playerChar.x = playerChar.getX() + 1;
+                    playerChar.y = playerChar.getY() - 1;
+                    newMap[playerChar.x][playerChar.y] = PLAYER;
+                    updateMapDiscovered();
+                    camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
+                }
+                else if(newMap[playerChar.getX() + 1][playerChar.getY() - 1] == EXIT) {
+                    attackedEnemy = false;
+                    assetManager.get("Floor Climb.mp3", Sound.class).play();
+                    floorLevel = floorLevel + 1;
+                    recreateWorld();
+                    playerChar.setHpBeforeSave(playerChar.HP);
+                    playerHPBar.setRange(0, playerChar.HP);
+                    playerHPBar.setValue(playerChar.HP);
+                    SaveFile saveData = new SaveFile(newMap, mapDiscovered, enemies, playerChar,
+                            tiledMapWidth, tiledMapHeight, floorLevel);
+                    saveData.saveSaveData();
+                }
+                enemyTurn();
+                detectChangeArrows();
+            }
+        });
+        stage.addActor(arrowBotRight);
+
+        // Bot right attack button
+        attackBotRightButton = new AttackButton(atkBotRightTex, cellWidth * 2, 0, cellWidth, cellHeight);
+        attackBotRightButton.setBounds(cellWidth * 2, 0, cellWidth, cellHeight);
+        attackBotRightButton.addListener(new InputListener() {
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                return true;
+            }
+
+            @Override
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                for (int i = 0; i < enemies.size; i++) {
+                    if (playerChar.getX() + 1 == enemies.get(i).getX() &&
+                            (playerChar.getY() - 1) == enemies.get(i).getY()) {
+                        enemyX = enemies.get(i).getX();
+                        attackedEnemy = true;
+                        enemies.get(i).takeDamage(playerChar.ATK);
+                        if (enemies.get(i).isDead()) {
+                            playerChar.HP = playerChar.HP + 1;
+                            playerHPBar.setValue(playerChar.HP);
+                            assetManager.get("Dying.mp3", Sound.class).play();
+                            newMap[enemies.get(i).getX()][enemies.get(i).getY()] = FLOOR;
+                            enemies.removeIndex(i);
+                            attackTopRightButton.setVisible(false);
+                            arrowTopRight.setVisible(true);
+                        }
+                        assetManager.get("Pain.mp3", Sound.class).play(0.1f);
+                    }
+                }
+                enemyTurn();
+                detectChangeArrows();
+            }
+        });
+        attackBotRightButton.setVisible(false);
+        stage.addActor(attackBotRightButton);
+
         // Down arrow touch key
         arrowDown = new Arrow(arrowDownTex, cellWidth, 0, cellWidth, cellHeight);
         arrowDown.setBounds(cellWidth, 0, cellWidth, cellHeight);
@@ -574,6 +762,8 @@ public class GameplayScreen implements Screen, InputProcessor {
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                 assetManager.get("Button Push.mp3", Sound.class).play();
                 if((playerChar.getY() - 1) < 0) {
+                    enemyTurn();
+                    detectChangeArrows();
                     return;
                 }
                 if(newMap[playerChar.getX()][playerChar.getY() - 1] == FLOOR) {
@@ -603,7 +793,7 @@ public class GameplayScreen implements Screen, InputProcessor {
         stage.addActor(arrowDown);
 
         // Down attack button
-        attackDownButton = new AttackButton(attackButtonTex, cellWidth, 0, cellWidth, cellHeight);
+        attackDownButton = new AttackButton(atkDownTex, cellWidth, 0, cellWidth, cellHeight);
         attackDownButton.setBounds(cellWidth, 0, cellWidth, cellHeight);
         attackDownButton.addListener(new InputListener() {
             @Override
@@ -638,6 +828,87 @@ public class GameplayScreen implements Screen, InputProcessor {
         attackDownButton.setVisible(false);
         stage.addActor(attackDownButton);
 
+        // Bot left arrow touch key
+        arrowBotLeft = new Arrow(arrowBotLeftTex, 0, 0, cellWidth, cellHeight);
+        arrowBotLeft.setBounds(0, 0, cellWidth, cellHeight);
+        arrowBotLeft.addListener(new InputListener() {
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                return true;
+            }
+
+            @Override
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                assetManager.get("Button Push.mp3", Sound.class).play();
+                if((playerChar.getY() - 1 < 0) ||
+                        (playerChar.getX() - 1 < 0)) {
+                    enemyTurn();
+                    detectChangeArrows();
+                    return;
+                }
+                if(newMap[playerChar.getX() - 1][playerChar.getY() - 1] == FLOOR) {
+                    attackedEnemy = false;
+                    newMap[playerChar.getX()][playerChar.getY()] = FLOOR;
+                    playerChar.x = playerChar.getX() - 1;
+                    playerChar.y = playerChar.getY() - 1;
+                    newMap[playerChar.x][playerChar.y] = PLAYER;
+                    updateMapDiscovered();
+                    camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
+                }
+                else if(newMap[playerChar.getX() - 1][playerChar.getY() - 1] == EXIT) {
+                    attackedEnemy = false;
+                    assetManager.get("Floor Climb.mp3", Sound.class).play();
+                    floorLevel = floorLevel + 1;
+                    recreateWorld();
+                    playerChar.setHpBeforeSave(playerChar.HP);
+                    playerHPBar.setRange(0, playerChar.HP);
+                    playerHPBar.setValue(playerChar.HP);
+                    SaveFile saveData = new SaveFile(newMap, mapDiscovered, enemies, playerChar,
+                            tiledMapWidth, tiledMapHeight, floorLevel);
+                    saveData.saveSaveData();
+                }
+                enemyTurn();
+                detectChangeArrows();
+            }
+        });
+        stage.addActor(arrowBotLeft);
+
+        // Bot left attack button
+        attackBotLeftButton = new AttackButton(atkBotLeftTex, 0, 0, cellWidth, cellHeight);
+        attackBotLeftButton.setBounds(0, 0, cellWidth, cellHeight);
+        attackBotLeftButton.addListener(new InputListener() {
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                return true;
+            }
+
+            @Override
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                for (int i = 0; i < enemies.size; i++) {
+                    if (playerChar.getX() - 1 == enemies.get(i).getX() &&
+                            (playerChar.getY() - 1) == enemies.get(i).getY()) {
+                        enemyX = enemies.get(i).getX();
+                        attackedEnemy = true;
+                        enemies.get(i).takeDamage(playerChar.ATK);
+                        if (enemies.get(i).isDead()) {
+                            playerChar.HP = playerChar.HP + 1;
+                            playerHPBar.setValue(playerChar.HP);
+                            assetManager.get("Dying.mp3", Sound.class).play();
+                            newMap[enemies.get(i).getX()][enemies.get(i).getY()] = FLOOR;
+                            enemies.removeIndex(i);
+                            attackTopRightButton.setVisible(false);
+                            arrowTopRight.setVisible(true);
+                        }
+                        assetManager.get("Pain.mp3", Sound.class).play(0.1f);
+                    }
+                }
+                enemyTurn();
+                detectChangeArrows();
+            }
+        });
+        attackBotLeftButton.setVisible(false);
+        stage.addActor(attackBotLeftButton);
+
         // Left arrow touch key
         arrowLeft = new Arrow(arrowLeftTex, 0, cellHeight, cellWidth, cellHeight);
         arrowLeft.setBounds(0, cellHeight, cellWidth, cellHeight);
@@ -651,6 +922,7 @@ public class GameplayScreen implements Screen, InputProcessor {
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                 assetManager.get("Button Push.mp3", Sound.class).play();
                 if((playerChar.getX() - 1) < 0) {
+                    enemyTurn();
                     return;
                 }
                 if(newMap[playerChar.getX() - 1][playerChar.getY()] == FLOOR) {
@@ -680,7 +952,7 @@ public class GameplayScreen implements Screen, InputProcessor {
         stage.addActor(arrowLeft);
 
         // Left attack button
-        attackLeftButton = new AttackButton(attackButtonTex, 0, cellHeight, cellWidth, cellHeight);
+        attackLeftButton = new AttackButton(atkLeftTex, 0, cellHeight, cellWidth, cellHeight);
         attackLeftButton.setBounds(0, cellHeight, cellWidth, cellHeight);
         attackLeftButton.addListener(new InputListener() {
             @Override
@@ -715,6 +987,88 @@ public class GameplayScreen implements Screen, InputProcessor {
         attackLeftButton.setVisible(false);
         stage.addActor(attackLeftButton);
 
+        // Top left arrow touch key
+        arrowTopLeft = new Arrow(arrowTopLeftTex, 0, cellHeight * 2, cellWidth, cellHeight);
+        arrowTopLeft.setBounds(0, cellHeight * 2, cellWidth, cellHeight);
+        arrowTopLeft.addListener(new InputListener() {
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                return true;
+            }
+
+            @Override
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                assetManager.get("Button Push.mp3", Sound.class).play();
+                if((playerChar.getY() + 1 >= tiledMapHeight) ||
+                        (playerChar.getX() - 1 < 0)) {
+                    enemyTurn();
+                    return;
+                }
+                if(newMap[playerChar.getX() - 1][playerChar.getY() + 1] == FLOOR) {
+                    attackedEnemy = false;
+                    newMap[playerChar.getX()][playerChar.getY()] = FLOOR;
+                    playerChar.x = playerChar.getX() - 1;
+                    playerChar.y = playerChar.getY() + 1;
+                    newMap[playerChar.x][playerChar.y] = PLAYER;
+                    updateMapDiscovered();
+                    camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
+                }
+                else if(newMap[playerChar.getX() - 1][playerChar.getY() + 1] == EXIT) {
+                    attackedEnemy = false;
+                    assetManager.get("Floor Climb.mp3", Sound.class).play();
+                    floorLevel = floorLevel + 1;
+                    recreateWorld();
+                    playerChar.setHpBeforeSave(playerChar.HP);
+                    playerHPBar.setRange(0, playerChar.HP);
+                    playerHPBar.setValue(playerChar.HP);
+                    SaveFile saveData = new SaveFile(newMap, mapDiscovered, enemies, playerChar,
+                            tiledMapWidth, tiledMapHeight, floorLevel);
+                    saveData.saveSaveData();
+                }
+                enemyTurn();
+                detectChangeArrows();
+            }
+        });
+        stage.addActor(arrowTopLeft);
+
+        // Top left attack button
+        attackTopLeftButton = new AttackButton(atkTopLeftTex, 0, cellHeight * 2, cellWidth, cellHeight);
+        attackTopLeftButton.setBounds(0, cellHeight * 2, cellWidth, cellHeight);
+        attackTopLeftButton.addListener(new InputListener() {
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                return true;
+            }
+
+            @Override
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                for (int i = 0; i < enemies.size; i++) {
+                    if (playerChar.getX() - 1 == enemies.get(i).getX() &&
+                            (playerChar.getY() + 1) == enemies.get(i).getY()) {
+                        enemyX = enemies.get(i).getX();
+                        attackedEnemy = true;
+                        enemies.get(i).takeDamage(playerChar.ATK);
+                        if (enemies.get(i).isDead()) {
+                            playerChar.HP = playerChar.HP + 1;
+                            playerHPBar.setValue(playerChar.HP);
+                            assetManager.get("Dying.mp3", Sound.class).play();
+                            newMap[enemies.get(i).getX()][enemies.get(i).getY()] = FLOOR;
+                            enemies.removeIndex(i);
+                            attackTopRightButton.setVisible(false);
+                            arrowTopRight.setVisible(true);
+                        }
+                        assetManager.get("Pain.mp3", Sound.class).play(0.1f);
+                    }
+                }
+                enemyTurn();
+                detectChangeArrows();
+            }
+        });
+        attackTopLeftButton.setVisible(false);
+        stage.addActor(attackTopLeftButton);
+
+        detectChangeArrows();
+
         //give priority touch to the stage actors
         InputMultiplexer im = new InputMultiplexer(stage, this);
         Gdx.input.setInputProcessor(im);
@@ -726,19 +1080,19 @@ public class GameplayScreen implements Screen, InputProcessor {
 
         for (int x = -1; x < 2; x++) {
             for (int y = -1; y < 2; y++) {
-                if (((x == 0) && (y == 0)) ||
-                        (playerChar.getX() + x < 0) ||
-                        (playerChar.getX() + x >= tiledMapWidth) ||
-                        (playerChar.getY() + y < 0) ||
-                        (playerChar.getY() + y >= tiledMapHeight)){
+                if ((x == 0) && (y == 0)) {
                     continue;
                 }
-
-                if (newMap[playerChar.getX() + x][playerChar.getY() + y] == ENEMY) {
-                    whichEnemy[index] = true;
-                }
                 else {
-                    whichEnemy[index] = false;
+                    if ((playerChar.getX() + x < 0) ||
+                            (playerChar.getX() + x >= tiledMapWidth) ||
+                            (playerChar.getY() + y < 0) ||
+                            (playerChar.getY() + y >= tiledMapHeight)) {
+                        whichEnemy[index] = false;
+                    }
+                    else if (newMap[playerChar.getX() + x][playerChar.getY() + y] == ENEMY) {
+                        whichEnemy[index] = true;
+                    }
                 }
                 index++;
             }
@@ -750,10 +1104,12 @@ public class GameplayScreen implements Screen, InputProcessor {
         boolean[] whichEnemy = enemyDetected();
         for (int i = 0; i < whichEnemy.length; i++) {
             if(whichEnemy[i] && (i == 0)) {
-                // sword bot left
+                arrowBotLeft.setVisible(false);
+                attackBotLeftButton.setVisible(true);
             }
             else if (!whichEnemy[i] && (i == 0)) {
-                // arrow bot left
+                attackBotLeftButton.setVisible(false);
+                arrowBotLeft.setVisible(true);
             }
             else if (whichEnemy[i] && (i == 1)) {
                 arrowLeft.setVisible(false);
@@ -764,10 +1120,12 @@ public class GameplayScreen implements Screen, InputProcessor {
                 arrowLeft.setVisible(true);
             }
             else if (whichEnemy[i] && (i == 2)) {
-                // sword top left
+                arrowTopLeft.setVisible(false);
+                attackTopLeftButton.setVisible(true);
             }
             else if (!whichEnemy[i] && (i == 2)) {
-                // arrow top left
+                attackTopLeftButton.setVisible(false);
+                arrowTopLeft.setVisible(true);
             }
             else if (whichEnemy[i] && (i == 3)) {
                 arrowDown.setVisible(false);
@@ -786,10 +1144,12 @@ public class GameplayScreen implements Screen, InputProcessor {
                 arrowUp.setVisible(true);
             }
             else if (whichEnemy[i] && (i == 5)) {
-                // sword bot right
+                arrowBotRight.setVisible(false);
+                attackBotRightButton.setVisible(true);
             }
             else if (!whichEnemy[i] && (i == 5)) {
-                // arrow bot right
+                attackBotRightButton.setVisible(false);
+                arrowBotRight.setVisible(true);
             }
             else if (whichEnemy[i] && (i == 6)) {
                 arrowRight.setVisible(false);
@@ -800,10 +1160,12 @@ public class GameplayScreen implements Screen, InputProcessor {
                 arrowRight.setVisible(true);
             }
             else if (whichEnemy[i] && (i == 7)) {
-                // sword top right
+                arrowTopRight.setVisible(false);
+                attackTopRightButton.setVisible(true);
             }
             else if (!whichEnemy[i] && (i == 7)) {
-                // arrow top right
+                attackTopRightButton.setVisible(false);
+                arrowTopRight.setVisible(true);
             }
         }
     }
@@ -812,10 +1174,10 @@ public class GameplayScreen implements Screen, InputProcessor {
         newMap = new int[tiledMapWidth][tiledMapHeight];
 
         // populate the map with walls
-        for (int i = tiledMapHeight - 1; i > 0; i--) {
-            for (int j = 0; j < tiledMapWidth; j++) {
+        for (int i = 0; i < tiledMapWidth; i++) {
+            for (int j = 0; j < tiledMapHeight; j++) {
                 if (randInt(0, 100) < 40) {
-                    newMap[j][i] = WALL;
+                    newMap[i][j] = WALL;
                 }
             }
         }
@@ -845,7 +1207,6 @@ public class GameplayScreen implements Screen, InputProcessor {
             ranPosX = randInt(1, (tiledMapWidth - 1));
             ranPosY = randInt(1, (tiledMapHeight - 1));
         }
-        //System.out.println("Random pt: " + ranPosX + ", " + ranPosY);
         int floodMapCount = 0;
         floodFill(copyNewMap, ranPosX, ranPosY, 0, 1);
 
@@ -1010,7 +1371,6 @@ public class GameplayScreen implements Screen, InputProcessor {
             ranPosY = randInt(1, (tiledMapHeight - 1));
         }
         newMap[ranPosX][ranPosY] = EXIT;
-        System.out.println("EXIT: " + ranPosX + " " + ranPosY);
     }
 
     /*
@@ -1163,8 +1523,8 @@ public class GameplayScreen implements Screen, InputProcessor {
             mapDiscovered.add(new Vector2(playerChar.getX(), playerChar.getY()));
         }
         int mapDiscoveredSize = mapDiscovered.size();
-        for (int i = (playerChar.getX() - 4); i <= (playerChar.getX() + 4); i++) {
-            for (int j = (playerChar.getY() - 4); j <= (playerChar.getY() + 4); j++) {
+        for (int i = (playerChar.getX() - 7); i <= (playerChar.getX() + 8); i++) {
+            for (int j = (playerChar.getY() - 5); j <= (playerChar.getY() + 4); j++) {
                 if ((i >= 0 && i <= (tiledMapWidth - 1)) &&
                         (j >= 0 && j <= (tiledMapHeight - 1))) {
                     mapTileDiscovered = new Vector2(i, j);
@@ -1196,7 +1556,10 @@ public class GameplayScreen implements Screen, InputProcessor {
 
         stage.getBatch().begin();
         if (gameOver) {
-            Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+            // do nothing and skip to rendering the game over screen
+        }
+        else if (options) {
+            // do nothing and skip to rendering the options
         }
         else if (mapPressed) {
             for (int i = 0; i < mapDiscovered.size(); i++) {
@@ -1236,32 +1599,10 @@ public class GameplayScreen implements Screen, InputProcessor {
                                 playerChar.y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
                         break;
 
-                    // enemy
+                    // map view doesn't display enemies, but will instead show the floor in their place
                     case 3:
-                        if(attackedPlayer) {
-                            //background
-                            c = stage.getBatch().getColor();
-                            stage.getBatch().setColor(c.r, c.g, c.b, 1f); //set alpha to 1
-                            stage.getBatch().draw(floorTex, mapDiscovered.get(i).x * TEXTURESIZE,
-                                    mapDiscovered.get(i).y * TEXTURESIZE * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
-                            //foreground
-                            c = stage.getBatch().getColor();
-                            stage.getBatch().setColor(c.r, c.g, c.b, 1f);//set alpha to 0.3
-                            stage.getBatch().draw(enemyAtkTex, mapDiscovered.get(i).x * TEXTURESIZE,
-                                    mapDiscovered.get(i).y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
-                        }
-                        else {
-                            //background
-                            c = stage.getBatch().getColor();
-                            stage.getBatch().setColor(c.r, c.g, c.b, 1f); //set alpha to 1
-                            stage.getBatch().draw(floorTex, mapDiscovered.get(i).x * TEXTURESIZE,
-                                    mapDiscovered.get(i).y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
-                            //foreground
-                            c = stage.getBatch().getColor();
-                            stage.getBatch().setColor(c.r, c.g, c.b, 1f);//set alpha to 0.3
-                            stage.getBatch().draw(enemyIdleTex, mapDiscovered.get(i).x * TEXTURESIZE,
-                                    mapDiscovered.get(i).y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
-                        }
+                        stage.getBatch().draw(floorTex, mapDiscovered.get(i).x * TEXTURESIZE,
+                                mapDiscovered.get(i).y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
                         break;
 
                     // portal
@@ -1430,7 +1771,7 @@ public class GameplayScreen implements Screen, InputProcessor {
 
     @Override
     public void resume() {
-
+        detectChangeArrows();
     }
 
     @Override
@@ -1438,6 +1779,8 @@ public class GameplayScreen implements Screen, InputProcessor {
         for (int actors = 0; actors < stage.getActors().size; actors++) {
             stage.getActors().get(actors).addAction(Actions.removeActor());
         }
+        enemies.clear();
+        mapDiscovered.clear();
         assetManager.dispose();
         stage.dispose();
     }
@@ -1445,6 +1788,43 @@ public class GameplayScreen implements Screen, InputProcessor {
     @Override
     public void resize(int width, int height) {
 
+    }
+
+    public void playerDead() {
+        for (int actors = 0; actors < stage.getActors().size; actors++) {
+            stage.getActors().get(actors).addAction(Actions.removeActor());
+        }
+        gameOver = true;
+
+        SaveFile highScoreFile = new SaveFile();
+        highScoreFile.writeHighScore(floorLevel);
+        int highScore = highScoreFile.readHighScore();
+
+        SaveFile saveFiles = new SaveFile();
+        saveFiles.deleteSaveData();
+
+        gameOverActor = new GameOver(gameOverTex, 0, 0, screenWidth, screenHeight);
+        gameOverActor.setBounds(0, 0, screenWidth, screenHeight);
+        gameOverActor.addListener(new InputListener() {
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                return true;
+            }
+
+            @Override
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+
+                game.setScreen(new MainMenuScreen(game));
+            }
+        });
+        stage.addActor(gameOverActor);
+
+        BitmapFont font = new BitmapFont();
+        font.getData().setScale(5, 5);
+        Label.LabelStyle textStyle = new Label.LabelStyle(font, Color.WHITE);
+        Label text = new Label(floorLevel + "\n\n" + highScore, textStyle);
+        text.setPosition(cellWidth * 8, cellHeight * 2.45f);
+        stage.addActor(text);
     }
 
     public void enemyTurn() {
@@ -1469,37 +1849,27 @@ public class GameplayScreen implements Screen, InputProcessor {
             //then move onto the next enemy in the array
             path = aStarPathFinding(startNode, goalNode);
             if (path == null || path.size == 0) {
-                attackedPlayer = true;
-                // continue
-            } else if (path.size == 1) {
+                // the enemy will do nothing if the path doesn't exist
+            }
+            else if (path.size == 1) {
                 attackedPlayer = true;
                 assetManager.get("Attacked.mp3", Sound.class).play(0.5f);
                 playerChar.takeDamage(enemies.get(i).ATK);
                 playerHPBar.setValue(playerChar.HP);
                 if (playerChar.isDead()) {
                     gameOver = true;
-                    for (int actors = 0; actors < stage.getActors().size; actors++) {
-                        stage.getActors().get(actors).addAction(Actions.removeActor());
-                    }
-                    BitmapFont font = new BitmapFont();
-                    font.getData().setScale(5, 5);
-                    Label.LabelStyle textStyle = new Label.LabelStyle(font, Color.WHITE);
-                    Label text = new Label("Game over!\nFloors cleared: " + floorLevel
-                            + "\nPress anywhere to return to the main menu!", textStyle);
-                    text.setPosition(cellWidth, cellHeight * 3);
-                    stage.addActor(text);
-                    SaveFile saveFiles = new SaveFile();
-                    saveFiles.deleteSaveData();
+                    playerDead();
                 }
-            } else {
+            }
+            else {
                 attackedPlayer = false;
                 //move the enemy units one tile closer to the player
                 newMap[enemies.get(i).x][enemies.get(i).y] = FLOOR;
                 enemies.get(i).x = path.get(1).getCurrentX();
                 enemies.get(i).y = path.get(1).getCurrentY();
                 newMap[enemies.get(i).x][enemies.get(i).y] = ENEMY;
-                path = null;
             }
+            path = null;
         }
     }
 
@@ -1507,90 +1877,12 @@ public class GameplayScreen implements Screen, InputProcessor {
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
         userTouch = new Vector2(Gdx.input.getX(), Gdx.input.getY());
         dragOld = userTouch;
-        worldTouch = camera.unproject(new Vector3(userTouch, 0));
         return true;
     }
 
     @Override
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
-        if (gameOver) {
-            this.game.setScreen(new MainMenuScreen(game));
-        }
-        else if (mapPressed) {
-            return false;
-        }
-        else if (options) {
-            return false;
-        }
-        /*
-        else {
-            float delay = 0.02f; // seconds
-            Timer.schedule(new Timer.Task(){
-                @Override
-                public void run() {
-                    worldTouch = new Vector3((int) worldTouch.x / TEXTURESIZE,
-                            (int) worldTouch.y / TEXTURESIZE, 0);
-                    //if within the bounds of the world
-                    if ((worldTouch.x >= 0 && worldTouch.x <= tiledMapWidth) &&
-                            (worldTouch.y >= 0 && worldTouch.y <= tiledMapHeight)) {
-                        //if within one tile from the player character
-                        if ((newMap[(int) worldTouch.x][(int) worldTouch.y] != WALL) &&
-                                ((Math.abs(worldTouch.x - playerChar.x) == 1 ||
-                                        Math.abs(worldTouch.x - playerChar.x) == 0) &&
-                                        (Math.abs(worldTouch.y - playerChar.y) == 1 ||
-                                                (Math.abs(worldTouch.y - playerChar.y) == 0)))) {
-                            if (newMap[(int) worldTouch.x][(int) worldTouch.y] == ENEMY) {
-                                for (int i = 0; i < enemies.size; i++) {
-                                    if (worldTouch.x == enemies.get(i).getX() &&
-                                            worldTouch.y == enemies.get(i).getY()) {
-                                        enemyX = enemies.get(i).getX();
-                                        attackedEnemy = true;
-                                        enemies.get(i).takeDamage(playerChar.ATK);
-                                        if (enemies.get(i).isDead()) {
-                                            playerChar.HP = playerChar.HP + 1;
-                                            playerHPBar.setValue(playerChar.HP);
-                                            assetManager.get("Dying.mp3", Sound.class).play();
-                                            newMap[enemies.get(i).getX()][enemies.get(i).getY()] = FLOOR;
-                                            enemies.removeIndex(i);
-                                        }
-                                        assetManager.get("Pain.mp3", Sound.class).play(0.1f);
-                                    }
-                                }
-                            }
-                            else if (newMap[(int) worldTouch.x][(int) worldTouch.y] == EXIT) {
-                                attackedEnemy = false;
-                                assetManager.get("Floor Climb.mp3", Sound.class).play();
-                                floorLevel = floorLevel + 1;
-                                recreateWorld();
-                                playerChar.setHpBeforeSave(playerChar.HP);
-                                playerHPBar.setRange(0, playerChar.HP);
-                                playerHPBar.setValue(playerChar.HP);
-                                SaveFile saveData = new SaveFile(newMap, mapDiscovered, enemies, playerChar,
-                                        tiledMapWidth, tiledMapHeight, floorLevel);
-                                saveData.saveSaveData();
-                            }
-                            else if (newMap[(int) worldTouch.x][(int) worldTouch.y] == FLOOR) {
-                                attackedEnemy = false;
-                                newMap[playerChar.x][playerChar.y] = FLOOR;
-                                playerChar.x = (int) worldTouch.x;
-                                playerChar.y = (int) worldTouch.y;
-                                newMap[playerChar.x][playerChar.y] = PLAYER;
-                                updateMapDiscovered();
-                                camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
-                            }
-                            //initialize a goal node for pathfinding (player character)
-                            goalNode = new Node();
-                            goalNode.setCurrentX(playerChar.getX());
-                            goalNode.setCurrentY(playerChar.getY());
-
-                            enemyTurn();
-                        }
-                    }
-                }
-            }, delay);
-        }
-        */
-        return true;
+        return false;
     }
 
     @Override

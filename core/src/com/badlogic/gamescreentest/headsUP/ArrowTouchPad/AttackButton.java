@@ -1,4 +1,4 @@
-package com.badlogic.gamescreentest.headsUP;
+package com.badlogic.gamescreentest.headsUP.ArrowTouchPad;
 
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;

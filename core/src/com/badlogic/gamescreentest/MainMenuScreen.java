@@ -17,9 +17,6 @@ import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
-/**
- * Created by admin on 6/8/2016.
- */
 public class MainMenuScreen implements Screen {
     final GameScreen game;
     OrthographicCamera camera;
@@ -86,7 +83,6 @@ public class MainMenuScreen implements Screen {
                     text.setPosition(screenWidth/3, cellHeight - (cellHeight/2));
                     text.addAction(Actions.fadeOut(3));
                     stage.addActor(text);
-                    System.out.println("No save files detected!");
                 }
             }
         });

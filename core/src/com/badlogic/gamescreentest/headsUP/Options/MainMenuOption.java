@@ -19,7 +19,7 @@ public class MainMenuOption extends Actor {
         width = cellWidth * 7;
         height = cellHeight;
         x = cellWidth * 1.5f;
-        y = cellHeight * 3;
+        y = cellHeight * 4;
     }
 
     @Override
