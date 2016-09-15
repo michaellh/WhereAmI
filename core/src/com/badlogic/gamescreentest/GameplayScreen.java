@@ -38,7 +38,6 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.PriorityQueue;
 import java.util.Random;
 
 public class GameplayScreen implements Screen, InputProcessor {
@@ -86,10 +85,7 @@ public class GameplayScreen implements Screen, InputProcessor {
 
     Array<standardEnemy> enemies;
     int[][] newMap;
-    ArrayList<Node> closed;
-    PriorityQueue<Node> open;
     Node startNode, goalNode;
-    Array<Node> path;
 
     float screenWidth, screenHeight, cellWidth, cellHeight;
     int tiledMapWidth, tiledMapHeight;
@@ -180,8 +176,7 @@ public class GameplayScreen implements Screen, InputProcessor {
             saveFile = new SaveFile(newMap, mapDiscovered, enemies, playerChar,
                     tiledMapWidth, tiledMapHeight, floorLevel);
             saveFile.saveSaveData();
-        }
-        else {
+        } else {
             SaveFile saveFile = new SaveFile();
             playerChar = saveFile.readPlayer();
             enemies = saveFile.readEnemies();
@@ -210,12 +205,12 @@ public class GameplayScreen implements Screen, InputProcessor {
         stage.addActor(playerHPBar);
 
         // Initialize the player character animations
-        TextureRegion[][] tmp = TextureRegion.split(playerIdleTex, (playerIdleTex.getWidth()/4 + 5), (playerIdleTex.getHeight()/2 + 5));
+        TextureRegion[][] tmp = TextureRegion.split(playerIdleTex, (playerIdleTex.getWidth() / 4 + 5), (playerIdleTex.getHeight() / 2 + 5));
         playerIdleFrames = new TextureRegion[2];
         int index = 0;
-            for (int j = 0; j < 2; j++) {
-                playerIdleFrames[index++] = tmp[0][j];
-            }
+        for (int j = 0; j < 2; j++) {
+            playerIdleFrames[index++] = tmp[0][j];
+        }
 
         playerIdleAnimation = new Animation(1f, playerIdleFrames);
         playerIdleStateTime = 0f;
@@ -226,7 +221,6 @@ public class GameplayScreen implements Screen, InputProcessor {
         mapButton.addListener(new InputListener() {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                System.out.println("map touched down");
                 return true;
             }
 
@@ -441,20 +435,20 @@ public class GameplayScreen implements Screen, InputProcessor {
             @Override
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                 assetManager.get("Button Push.mp3", Sound.class).play();
-                if((playerChar.getY() + 1) >= tiledMapHeight) {
+                if ((playerChar.getY() + 1) >= tiledMapHeight) {
                     enemyTurn();
                     detectChangeArrows();
                     return;
-                }
-                else if(newMap[playerChar.getX()][playerChar.getY() + 1] == FLOOR) {
+                } else if (newMap[playerChar.getX()][playerChar.getY() + 1] == FLOOR) {
                     attackedEnemy = false;
                     newMap[playerChar.getX()][playerChar.getY()] = FLOOR;
                     playerChar.y = playerChar.getY() + 1;
                     newMap[playerChar.x][playerChar.y] = PLAYER;
                     updateMapDiscovered();
                     camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
-                }
-                else if(newMap[playerChar.getX()][playerChar.getY() + 1] == EXIT) {
+                } else if (newMap[playerChar.getX()][playerChar.getY() + 1] == EXIT) {
+                    enemies.clear();
+                    mapDiscovered.clear();
                     attackedEnemy = false;
                     assetManager.get("Floor Climb.mp3", Sound.class).play();
                     floorLevel = floorLevel + 1;
@@ -520,13 +514,13 @@ public class GameplayScreen implements Screen, InputProcessor {
             @Override
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                 assetManager.get("Button Push.mp3", Sound.class).play();
-                if((playerChar.getY() + 1 >= tiledMapHeight) ||
+                if ((playerChar.getY() + 1 >= tiledMapHeight) ||
                         (playerChar.getX() + 1 >= tiledMapWidth)) {
                     enemyTurn();
                     detectChangeArrows();
                     return;
                 }
-                if(newMap[playerChar.getX() + 1][playerChar.getY() + 1] == FLOOR) {
+                if (newMap[playerChar.getX() + 1][playerChar.getY() + 1] == FLOOR) {
                     attackedEnemy = false;
                     newMap[playerChar.getX()][playerChar.getY()] = FLOOR;
                     playerChar.x = playerChar.getX() + 1;
@@ -534,8 +528,9 @@ public class GameplayScreen implements Screen, InputProcessor {
                     newMap[playerChar.x][playerChar.y] = PLAYER;
                     updateMapDiscovered();
                     camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
-                }
-                else if(newMap[playerChar.getX() + 1][playerChar.getY() + 1] == EXIT) {
+                } else if (newMap[playerChar.getX() + 1][playerChar.getY() + 1] == EXIT) {
+                    enemies.clear();
+                    mapDiscovered.clear();
                     attackedEnemy = false;
                     assetManager.get("Floor Climb.mp3", Sound.class).play();
                     floorLevel = floorLevel + 1;
@@ -601,20 +596,21 @@ public class GameplayScreen implements Screen, InputProcessor {
             @Override
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                 assetManager.get("Button Push.mp3", Sound.class).play();
-                if((playerChar.getX() + 1) >= tiledMapWidth) {
+                if ((playerChar.getX() + 1) >= tiledMapWidth) {
                     enemyTurn();
                     detectChangeArrows();
                     return;
                 }
-                if(newMap[playerChar.getX() + 1][playerChar.getY()] == FLOOR) {
+                if (newMap[playerChar.getX() + 1][playerChar.getY()] == FLOOR) {
                     attackedEnemy = false;
                     newMap[playerChar.getX()][playerChar.getY()] = FLOOR;
                     playerChar.x = playerChar.getX() + 1;
                     newMap[playerChar.x][playerChar.y] = PLAYER;
                     updateMapDiscovered();
                     camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
-                }
-                else if(newMap[playerChar.getX() + 1][playerChar.getY()] == EXIT) {
+                } else if (newMap[playerChar.getX() + 1][playerChar.getY()] == EXIT) {
+                    enemies.clear();
+                    mapDiscovered.clear();
                     attackedEnemy = false;
                     assetManager.get("Floor Climb.mp3", Sound.class).play();
                     floorLevel = floorLevel + 1;
@@ -680,13 +676,13 @@ public class GameplayScreen implements Screen, InputProcessor {
             @Override
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                 assetManager.get("Button Push.mp3", Sound.class).play();
-                if((playerChar.getY() - 1 < 0) ||
+                if ((playerChar.getY() - 1 < 0) ||
                         (playerChar.getX() + 1 >= tiledMapWidth)) {
                     enemyTurn();
                     detectChangeArrows();
                     return;
                 }
-                if(newMap[playerChar.getX() + 1][playerChar.getY() - 1] == FLOOR) {
+                if (newMap[playerChar.getX() + 1][playerChar.getY() - 1] == FLOOR) {
                     attackedEnemy = false;
                     newMap[playerChar.getX()][playerChar.getY()] = FLOOR;
                     playerChar.x = playerChar.getX() + 1;
@@ -694,8 +690,9 @@ public class GameplayScreen implements Screen, InputProcessor {
                     newMap[playerChar.x][playerChar.y] = PLAYER;
                     updateMapDiscovered();
                     camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
-                }
-                else if(newMap[playerChar.getX() + 1][playerChar.getY() - 1] == EXIT) {
+                } else if (newMap[playerChar.getX() + 1][playerChar.getY() - 1] == EXIT) {
+                    enemies.clear();
+                    mapDiscovered.clear();
                     attackedEnemy = false;
                     assetManager.get("Floor Climb.mp3", Sound.class).play();
                     floorLevel = floorLevel + 1;
@@ -761,20 +758,21 @@ public class GameplayScreen implements Screen, InputProcessor {
             @Override
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                 assetManager.get("Button Push.mp3", Sound.class).play();
-                if((playerChar.getY() - 1) < 0) {
+                if ((playerChar.getY() - 1) < 0) {
                     enemyTurn();
                     detectChangeArrows();
                     return;
                 }
-                if(newMap[playerChar.getX()][playerChar.getY() - 1] == FLOOR) {
+                if (newMap[playerChar.getX()][playerChar.getY() - 1] == FLOOR) {
                     attackedEnemy = false;
                     newMap[playerChar.getX()][playerChar.getY()] = FLOOR;
                     playerChar.y = playerChar.getY() - 1;
                     newMap[playerChar.x][playerChar.y] = PLAYER;
                     updateMapDiscovered();
                     camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
-                }
-                else if(newMap[playerChar.getX()][playerChar.getY() - 1] == EXIT) {
+                } else if (newMap[playerChar.getX()][playerChar.getY() - 1] == EXIT) {
+                    enemies.clear();
+                    mapDiscovered.clear();
                     attackedEnemy = false;
                     assetManager.get("Floor Climb.mp3", Sound.class).play();
                     floorLevel = floorLevel + 1;
@@ -840,13 +838,13 @@ public class GameplayScreen implements Screen, InputProcessor {
             @Override
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                 assetManager.get("Button Push.mp3", Sound.class).play();
-                if((playerChar.getY() - 1 < 0) ||
+                if ((playerChar.getY() - 1 < 0) ||
                         (playerChar.getX() - 1 < 0)) {
                     enemyTurn();
                     detectChangeArrows();
                     return;
                 }
-                if(newMap[playerChar.getX() - 1][playerChar.getY() - 1] == FLOOR) {
+                if (newMap[playerChar.getX() - 1][playerChar.getY() - 1] == FLOOR) {
                     attackedEnemy = false;
                     newMap[playerChar.getX()][playerChar.getY()] = FLOOR;
                     playerChar.x = playerChar.getX() - 1;
@@ -854,8 +852,9 @@ public class GameplayScreen implements Screen, InputProcessor {
                     newMap[playerChar.x][playerChar.y] = PLAYER;
                     updateMapDiscovered();
                     camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
-                }
-                else if(newMap[playerChar.getX() - 1][playerChar.getY() - 1] == EXIT) {
+                } else if (newMap[playerChar.getX() - 1][playerChar.getY() - 1] == EXIT) {
+                    enemies.clear();
+                    mapDiscovered.clear();
                     attackedEnemy = false;
                     assetManager.get("Floor Climb.mp3", Sound.class).play();
                     floorLevel = floorLevel + 1;
@@ -921,19 +920,20 @@ public class GameplayScreen implements Screen, InputProcessor {
             @Override
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                 assetManager.get("Button Push.mp3", Sound.class).play();
-                if((playerChar.getX() - 1) < 0) {
+                if ((playerChar.getX() - 1) < 0) {
                     enemyTurn();
                     return;
                 }
-                if(newMap[playerChar.getX() - 1][playerChar.getY()] == FLOOR) {
+                if (newMap[playerChar.getX() - 1][playerChar.getY()] == FLOOR) {
                     attackedEnemy = false;
                     newMap[playerChar.getX()][playerChar.getY()] = FLOOR;
                     playerChar.x = playerChar.getX() - 1;
                     newMap[playerChar.x][playerChar.y] = PLAYER;
                     updateMapDiscovered();
                     camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
-                }
-                else if(newMap[playerChar.getX() - 1][playerChar.getY()] == EXIT) {
+                } else if (newMap[playerChar.getX() - 1][playerChar.getY()] == EXIT) {
+                    enemies.clear();
+                    mapDiscovered.clear();
                     attackedEnemy = false;
                     assetManager.get("Floor Climb.mp3", Sound.class).play();
                     floorLevel = floorLevel + 1;
@@ -999,12 +999,12 @@ public class GameplayScreen implements Screen, InputProcessor {
             @Override
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                 assetManager.get("Button Push.mp3", Sound.class).play();
-                if((playerChar.getY() + 1 >= tiledMapHeight) ||
+                if ((playerChar.getY() + 1 >= tiledMapHeight) ||
                         (playerChar.getX() - 1 < 0)) {
                     enemyTurn();
                     return;
                 }
-                if(newMap[playerChar.getX() - 1][playerChar.getY() + 1] == FLOOR) {
+                if (newMap[playerChar.getX() - 1][playerChar.getY() + 1] == FLOOR) {
                     attackedEnemy = false;
                     newMap[playerChar.getX()][playerChar.getY()] = FLOOR;
                     playerChar.x = playerChar.getX() - 1;
@@ -1012,8 +1012,9 @@ public class GameplayScreen implements Screen, InputProcessor {
                     newMap[playerChar.x][playerChar.y] = PLAYER;
                     updateMapDiscovered();
                     camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
-                }
-                else if(newMap[playerChar.getX() - 1][playerChar.getY() + 1] == EXIT) {
+                } else if (newMap[playerChar.getX() - 1][playerChar.getY() + 1] == EXIT) {
+                    enemies.clear();
+                    mapDiscovered.clear();
                     attackedEnemy = false;
                     assetManager.get("Floor Climb.mp3", Sound.class).play();
                     floorLevel = floorLevel + 1;
@@ -1082,15 +1083,13 @@ public class GameplayScreen implements Screen, InputProcessor {
             for (int y = -1; y < 2; y++) {
                 if ((x == 0) && (y == 0)) {
                     continue;
-                }
-                else {
+                } else {
                     if ((playerChar.getX() + x < 0) ||
                             (playerChar.getX() + x >= tiledMapWidth) ||
                             (playerChar.getY() + y < 0) ||
                             (playerChar.getY() + y >= tiledMapHeight)) {
                         whichEnemy[index] = false;
-                    }
-                    else if (newMap[playerChar.getX() + x][playerChar.getY() + y] == ENEMY) {
+                    } else if (newMap[playerChar.getX() + x][playerChar.getY() + y] == ENEMY) {
                         whichEnemy[index] = true;
                     }
                 }
@@ -1103,67 +1102,52 @@ public class GameplayScreen implements Screen, InputProcessor {
     public void detectChangeArrows() {
         boolean[] whichEnemy = enemyDetected();
         for (int i = 0; i < whichEnemy.length; i++) {
-            if(whichEnemy[i] && (i == 0)) {
+            if (whichEnemy[i] && (i == 0)) {
                 arrowBotLeft.setVisible(false);
                 attackBotLeftButton.setVisible(true);
-            }
-            else if (!whichEnemy[i] && (i == 0)) {
+            } else if (!whichEnemy[i] && (i == 0)) {
                 attackBotLeftButton.setVisible(false);
                 arrowBotLeft.setVisible(true);
-            }
-            else if (whichEnemy[i] && (i == 1)) {
+            } else if (whichEnemy[i] && (i == 1)) {
                 arrowLeft.setVisible(false);
                 attackLeftButton.setVisible(true);
-            }
-            else if (!whichEnemy[i] && (i == 1)) {
+            } else if (!whichEnemy[i] && (i == 1)) {
                 attackLeftButton.setVisible(false);
                 arrowLeft.setVisible(true);
-            }
-            else if (whichEnemy[i] && (i == 2)) {
+            } else if (whichEnemy[i] && (i == 2)) {
                 arrowTopLeft.setVisible(false);
                 attackTopLeftButton.setVisible(true);
-            }
-            else if (!whichEnemy[i] && (i == 2)) {
+            } else if (!whichEnemy[i] && (i == 2)) {
                 attackTopLeftButton.setVisible(false);
                 arrowTopLeft.setVisible(true);
-            }
-            else if (whichEnemy[i] && (i == 3)) {
+            } else if (whichEnemy[i] && (i == 3)) {
                 arrowDown.setVisible(false);
                 attackDownButton.setVisible(true);
-            }
-            else if (!whichEnemy[i] && (i == 3)) {
+            } else if (!whichEnemy[i] && (i == 3)) {
                 attackDownButton.setVisible(false);
                 arrowDown.setVisible(true);
-            }
-            else if (whichEnemy[i] && (i == 4)) {
+            } else if (whichEnemy[i] && (i == 4)) {
                 arrowUp.setVisible(false);
                 attackUpButton.setVisible(true);
-            }
-            else if (!whichEnemy[i] && (i == 4)) {
+            } else if (!whichEnemy[i] && (i == 4)) {
                 attackUpButton.setVisible(false);
                 arrowUp.setVisible(true);
-            }
-            else if (whichEnemy[i] && (i == 5)) {
+            } else if (whichEnemy[i] && (i == 5)) {
                 arrowBotRight.setVisible(false);
                 attackBotRightButton.setVisible(true);
-            }
-            else if (!whichEnemy[i] && (i == 5)) {
+            } else if (!whichEnemy[i] && (i == 5)) {
                 attackBotRightButton.setVisible(false);
                 arrowBotRight.setVisible(true);
-            }
-            else if (whichEnemy[i] && (i == 6)) {
+            } else if (whichEnemy[i] && (i == 6)) {
                 arrowRight.setVisible(false);
                 attackRightButton.setVisible(true);
-            }
-            else if (!whichEnemy[i] && (i == 6)) {
+            } else if (!whichEnemy[i] && (i == 6)) {
                 attackRightButton.setVisible(false);
                 arrowRight.setVisible(true);
-            }
-            else if (whichEnemy[i] && (i == 7)) {
+            } else if (whichEnemy[i] && (i == 7)) {
                 arrowTopRight.setVisible(false);
                 attackTopRightButton.setVisible(true);
-            }
-            else if (!whichEnemy[i] && (i == 7)) {
+            } else if (!whichEnemy[i] && (i == 7)) {
                 attackTopRightButton.setVisible(false);
                 arrowTopRight.setVisible(true);
             }
@@ -1212,17 +1196,16 @@ public class GameplayScreen implements Screen, InputProcessor {
 
         for (int i = tiledMapHeight - 1; i > 0; i--) {
             for (int j = 0; j < tiledMapWidth; j++) {
-                if(copyNewMap[j][i] == WALL) {
+                if (copyNewMap[j][i] == WALL) {
                     floodMapCount = floodMapCount + 1;
-                }
-                else if(copyNewMap[j][i] == FLOOR) {
+                } else if (copyNewMap[j][i] == FLOOR) {
                     newMap[j][i] = WALL;
                 }
             }
         }
 
-        float floorCovered = ((floodMapCount - mapWallCount)/ (float)(tiledMapWidth * tiledMapHeight));
-        if(floorCovered > 0.45) {
+        float floorCovered = ((floodMapCount - mapWallCount) / (float) (tiledMapWidth * tiledMapHeight));
+        if (floorCovered > 0.45) {
             return newMap;
         }
         return null;
@@ -1341,7 +1324,7 @@ public class GameplayScreen implements Screen, InputProcessor {
 
         //generate a new world map
         newMap = createWorld();
-        while(newMap == null) {
+        while (newMap == null) {
             newMap = createWorld();
         }
 
@@ -1373,77 +1356,25 @@ public class GameplayScreen implements Screen, InputProcessor {
         newMap[ranPosX][ranPosY] = EXIT;
     }
 
-    /*
-    Description: determines the optimal path from start to goal and returns it in
-                 in the form of an array
-    Function: aStarPathFinding
-    Inputs: start : Node, goal : Node
-    Outputs: Array<Node>
-     */
-    public Array<Node> aStarPathFinding(Node start, Node goal) {
-        //initialize an open and closed data structure
-        open = new PriorityQueue<Node>();
-        closed = new ArrayList<Node>();
-
-        //clear the closed list to ensure a new closed list
-        closed.clear();
-        //cost of going from start to start is 0
-        start.setgScore(0);
-        start.setfScore(heuristic(start, goal));
-
-        //check if start node is already the goal node and if it is,
-        //return the path
-        if ((start.getCurrentX() == goal.getCurrentX()) &&
-                (start.getCurrentY() == goal.getCurrentY())) {
-            return makePath(start);
+    public Vector2 ghettoAStar(Node start, Node goal) {
+        Array<Node> neighbours = expand(start);
+        int heuristicCost;
+        int[] nodeCosts = new int[neighbours.size];
+        for (int i = 0; i < neighbours.size; i++) {
+            if (neighbours.get(i).getCurrentX() == goal.getCurrentX() &&
+                    neighbours.get(i).getCurrentY() == goal.getCurrentY()) {
+                return new Vector2(goal.getCurrentX(), goal.getCurrentY());
+            }
+            heuristicCost = heuristic(neighbours.get(i), goal);
+            neighbours.get(i).setgScore(heuristicCost);
+            nodeCosts[i] = heuristicCost;
         }
-
-        //if not, store the start node into open
-        open.add(start);
-
-        //while there are still nodes unchecked in open, perform the following:
-        while (!open.isEmpty()) {
-            //sort the open list & in this sort, the compareTo() should move
-            //the node with the least cost to the head **priority q auto does it
-
-            //remove the first node with lowest cost in open & set it as the best next step
-            Node nextBest = open.poll();
-
-            //if nextBest is the goal then return with its path
-            if ((nextBest.getCurrentX() == goal.getCurrentX()) &&
-                    (nextBest.getCurrentY() == goal.getCurrentY())) {
-                return makePath(nextBest);
+        Arrays.sort(nodeCosts);
+        int closest = nodeCosts[0];
+        for (int j = 0; j < neighbours.size; j++) {
+            if (neighbours.get(j).getgScore() == closest) {
+                return new Vector2(neighbours.get(j).getCurrentX(), neighbours.get(j).getCurrentY());
             }
-
-            //expand this next best step's neighbours into an array of nodes
-            Array<Node> neighbours = expand(nextBest);
-
-            for (int i = 0; i < neighbours.size; i++) {
-                //if the node isn't in closed then set its parent to the
-                //next best node and then add the node to the open list
-                if (!closed.contains(neighbours.get(i))) {
-                    int tempGScore = nextBest.getgScore() + 1;
-                    neighbours.get(i).setfScore(neighbours.get(i).getgScore() +
-                            heuristic(neighbours.get(i), goal));
-
-                    if (!open.contains(neighbours.get(i))) {
-                        open.add(neighbours.get(i));
-                    } else {
-                        if (tempGScore >= neighbours.get(i).getgScore()) {
-                            continue;
-                        }
-                    }
-                    neighbours.get(i).setParent(nextBest);
-                    neighbours.get(i).setgScore(tempGScore);
-
-                    if ((neighbours.get(i).getCurrentX() == goal.getCurrentX()) &&
-                            neighbours.get(i).getCurrentY() == goal.getCurrentY()) {
-                        return makePath(neighbours.get(i));
-                    }
-                }
-            }
-            //mark nextBest as having been read
-            closed.add(nextBest);
         }
         return null;
     }
@@ -1466,7 +1397,7 @@ public class GameplayScreen implements Screen, InputProcessor {
 
                 //if a neighbour isn't within the bounds of the world/isn't a floor,
                 //don't initialize and store them into the neighbours array
-                if(((x + node.getCurrentX()) >= tiledMapWidth) ||
+                if (((x + node.getCurrentX()) >= tiledMapWidth) ||
                         ((x + node.getCurrentX()) < 0) ||
                         ((y + node.getCurrentY()) >= tiledMapHeight) ||
                         ((y + node.getCurrentY()) < 0)) {
@@ -1499,50 +1430,31 @@ public class GameplayScreen implements Screen, InputProcessor {
         return D * (dx + dy) + (D2 - 2 * D) * Math.min(dx, dy);
     }
 
-    /*
-    Description: creates a path from input start node to the goal node
-    Function: makePath
-    Inputs: node : Node
-    Outputs: Array<Node>
-     */
-    public Array<Node> makePath(Node node) {
-        Array<Node> path = new Array<Node>();
-        while (node.getParent() != null) {
-            node = node.getParent();
-            path.add(node);
-        }
-        path.reverse();
-        return path;
-    }
 
     public void updateMapDiscovered() {
-        Vector2 mapTileDiscovered;
-        boolean tileDiscovered = false;
+        Vector2 mapTile;
 
         if (mapDiscovered.size() == 0) {
             mapDiscovered.add(new Vector2(playerChar.getX(), playerChar.getY()));
         }
-        int mapDiscoveredSize = mapDiscovered.size();
-        for (int i = (playerChar.getX() - 7); i <= (playerChar.getX() + 8); i++) {
+        for (int i = (playerChar.getX() - 7); i <= (playerChar.getX() + 6); i++) {
+            if(i < 0 || i >= tiledMapWidth) {
+                continue;
+            }
             for (int j = (playerChar.getY() - 5); j <= (playerChar.getY() + 4); j++) {
-                if ((i >= 0 && i <= (tiledMapWidth - 1)) &&
-                        (j >= 0 && j <= (tiledMapHeight - 1))) {
-                    mapTileDiscovered = new Vector2(i, j);
-                    for (int k = 0; k < mapDiscoveredSize; k++) {
-                        if (((mapDiscovered.get(k).x == mapTileDiscovered.x) &&
-                                (mapDiscovered.get(k).y == mapTileDiscovered.y))) {
-                            tileDiscovered = true;
-                        }
-                    }
-                    if (tileDiscovered) {
-                        tileDiscovered = false;
-                    } else {
-                        mapDiscovered.add(mapTileDiscovered);
+                if (j < 0 || j >= tiledMapHeight) {
+                    // if out of bounds then don't update the discovered map with the position
+                }
+                else {
+                    mapTile = new Vector2(i, j);
+                    if(!mapDiscovered.contains(mapTile)) {
+                        mapDiscovered.add(mapTile);
                     }
                 }
             }
         }
     }
+
 
     @Override
     public void render(float delta) {
@@ -1557,11 +1469,9 @@ public class GameplayScreen implements Screen, InputProcessor {
         stage.getBatch().begin();
         if (gameOver) {
             // do nothing and skip to rendering the game over screen
-        }
-        else if (options) {
+        } else if (options) {
             // do nothing and skip to rendering the options
-        }
-        else if (mapPressed) {
+        } else if (mapPressed) {
             for (int i = 0; i < mapDiscovered.size(); i++) {
                 int tile = newMap[(int) mapDiscovered.get(i).x][(int) mapDiscovered.get(i).y];
                 switch (tile) {
@@ -1620,8 +1530,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                         break;
                 }
             }
-        }
-        else {
+        } else {
             for (int i = (playerChar.getX() - (8)); i < (playerChar.getX() + (9)); i++) {
                 for (int j = (playerChar.getY() - (5)); j < (playerChar.getY() + (6)); j++) {
                     if (i < 0 || i >= tiledMapWidth || j < 0 || j >= tiledMapHeight) {
@@ -1632,7 +1541,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                         //floor
                         case 0:
                             stage.getBatch().draw(floorTex, i * TEXTURESIZE, j * TEXTURESIZE,
-                                TEXTURESIZE, TEXTURESIZE);
+                                    TEXTURESIZE, TEXTURESIZE);
                             break;
 
                         // wall
@@ -1651,8 +1560,8 @@ public class GameplayScreen implements Screen, InputProcessor {
 
                         // player
                         case 2:
-                            if(attackedEnemy) {
-                                if(playerChar.getX() > enemyX) {
+                            if (attackedEnemy) {
+                                if (playerChar.getX() > enemyX) {
                                     //background
                                     c = stage.getBatch().getColor();
                                     stage.getBatch().setColor(c.r, c.g, c.b, 1f); //set alpha to 1
@@ -1663,8 +1572,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                                     stage.getBatch().setColor(c.r, c.g, c.b, 1f);//set alpha to 0.3
                                     stage.getBatch().draw(playerAtkLeftTex, playerChar.x * TEXTURESIZE,
                                             playerChar.y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
-                                }
-                                else {
+                                } else {
                                     //background
                                     c = stage.getBatch().getColor();
                                     stage.getBatch().setColor(c.r, c.g, c.b, 1f); //set alpha to 1
@@ -1676,8 +1584,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                                     stage.getBatch().draw(playerAtkRightTex, playerChar.x * TEXTURESIZE,
                                             playerChar.y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
                                 }
-                            }
-                            else {
+                            } else {
                                 //background
                                 c = stage.getBatch().getColor();
                                 stage.getBatch().setColor(c.r, c.g, c.b, 1f); //set alpha to 1
@@ -1693,7 +1600,7 @@ public class GameplayScreen implements Screen, InputProcessor {
 
                         // enemy
                         case 3:
-                            if(attackedPlayer) {
+                            if (attackedPlayer) {
                                 //background
                                 c = stage.getBatch().getColor();
                                 stage.getBatch().setColor(c.r, c.g, c.b, 1f); //set alpha to 1
@@ -1704,8 +1611,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                                 stage.getBatch().setColor(c.r, c.g, c.b, 1f);//set alpha to 0.3
                                 stage.getBatch().draw(enemyAtkTex, i * TEXTURESIZE, j * TEXTURESIZE,
                                         TEXTURESIZE, TEXTURESIZE);
-                            }
-                            else {
+                            } else {
                                 //background
                                 c = stage.getBatch().getColor();
                                 stage.getBatch().setColor(c.r, c.g, c.b, 1f); //set alpha to 1
@@ -1844,6 +1750,7 @@ public class GameplayScreen implements Screen, InputProcessor {
             startNode.setCurrentX(enemies.get(i).getX());
             startNode.setCurrentY(enemies.get(i).getY());
 
+            /*
             //create the path from the enemy to the player
             //and if the enemy is beside the player or the path is null
             //then move onto the next enemy in the array
@@ -1862,16 +1769,54 @@ public class GameplayScreen implements Screen, InputProcessor {
                 }
             }
             else {
+            */
+            Vector2 closeNode = ghettoAStar(startNode, goalNode);
+            if (closeNode.x == goalNode.getCurrentX() &&
+                    closeNode.y == goalNode.getCurrentY()) {
+                attackedPlayer = true;
+                assetManager.get("Attacked.mp3", Sound.class).play(0.5f);
+                playerChar.takeDamage(enemies.get(i).ATK);
+                playerHPBar.setValue(playerChar.HP);
+                if (playerChar.isDead()) {
+                    gameOver = true;
+                    playerDead();
+                }
+            }
+            else {
                 attackedPlayer = false;
                 //move the enemy units one tile closer to the player
                 newMap[enemies.get(i).x][enemies.get(i).y] = FLOOR;
-                enemies.get(i).x = path.get(1).getCurrentX();
-                enemies.get(i).y = path.get(1).getCurrentY();
+                enemies.get(i).x = (int) closeNode.x;
+                enemies.get(i).y = (int) closeNode.y;
                 newMap[enemies.get(i).x][enemies.get(i).y] = ENEMY;
             }
-            path = null;
+            /*
+            if((goalNode.getCurrentX() % closeNode.x == 1) ||
+                    (goalNode.getCurrentY() % closeNode.y == 1)) {
+                attackedPlayer = true;
+                assetManager.get("Attacked.mp3", Sound.class).play(0.5f);
+                playerChar.takeDamage(enemies.get(i).ATK);
+                playerHPBar.setValue(playerChar.HP);
+                if (playerChar.isDead()) {
+                    gameOver = true;
+                    playerDead();
+                }
+            }
+            */
+
+
+            /*
+            attackedPlayer = false;
+            //move the enemy units one tile closer to the player
+            newMap[enemies.get(i).x][enemies.get(i).y] = FLOOR;
+            enemies.get(i).x = (int) closeNode.x;
+            enemies.get(i).y = (int) closeNode.y;
+            newMap[enemies.get(i).x][enemies.get(i).y] = ENEMY;
+            */
         }
+        //path = null;
     }
+
 
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
