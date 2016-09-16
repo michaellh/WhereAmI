@@ -53,7 +53,7 @@ public class GameplayScreen implements Screen, InputProcessor {
             atkTopRightTex, atkBotRightTex, atkBotLeftTex, atkTopLeftTex,
             atkUpTex, atkRightTex, atkDownTex, atkLeftTex,
             arrowTopRightTex, arrowBotRightTex, arrowBotLeftTex, arrowTopLeftTex,
-            gameOverTex;
+            gameOverTex, heartTex;
     Random rand;
 
     gameOptions optButton;
@@ -89,7 +89,7 @@ public class GameplayScreen implements Screen, InputProcessor {
 
     float screenWidth, screenHeight, cellWidth, cellHeight;
     int tiledMapWidth, tiledMapHeight;
-    int FLOOR, WALL, PLAYER, ENEMY, EXIT, TEXTURESIZE;
+    int FLOOR, WALL, PLAYER, ENEMY, EXIT, HEART, TEXTURESIZE;
     int wallCount, floorLevel;
     int enemyX;
 
@@ -119,6 +119,7 @@ public class GameplayScreen implements Screen, InputProcessor {
         PLAYER = 2;
         ENEMY = 3;
         EXIT = 4;
+        HEART = 5;
 
         rand = new Random();
 
@@ -167,6 +168,7 @@ public class GameplayScreen implements Screen, InputProcessor {
         atkLeftTex = assetManager.get("attackLeftButton.png", Texture.class);
         atkTopLeftTex = assetManager.get("attackTopLeftButton.png", Texture.class);
         gameOverTex = assetManager.get("GameOver.jpg", Texture.class);
+        heartTex = assetManager.get("heart.png", Texture.class);
 
         if (this.game.getNewGame()) {
             SaveFile saveFile = new SaveFile();
@@ -203,6 +205,13 @@ public class GameplayScreen implements Screen, InputProcessor {
         playerHPBar.setPosition(0, 7 * cellHeight + spriteBack.getHeight());
         playerHPBar.setValue(playerChar.HP);
         stage.addActor(playerHPBar);
+
+        BitmapFont font = new BitmapFont();
+        font.getData().setScale(5, 5);
+        Label.LabelStyle textStyle = new Label.LabelStyle(font, Color.ROYAL);
+        final Label floorLvlText = new Label("Floor: " + floorLevel, textStyle);
+        floorLvlText.setPosition(cellWidth * 4, playerHPBar.getY() - cellHeight/2.5f);
+        stage.addActor(floorLvlText);
 
         // Initialize the player character animations
         TextureRegion[][] tmp = TextureRegion.split(playerIdleTex, (playerIdleTex.getWidth() / 4 + 5), (playerIdleTex.getHeight() / 2 + 5));
@@ -262,13 +271,15 @@ public class GameplayScreen implements Screen, InputProcessor {
                         int mapFindPlayer = stage.getActors().indexOf(mapSeePlayer, true);
                         stage.getActors().get(mapFindPlayer).addAction(Actions.removeActor());
 
-                        // Enables the HP bar, map mode button, options button, menu button, and d-pad
+                        // Enables the HP bar, map mode button, options button, menu button, d-pad, and floor level
                         int mapButtonIndex = stage.getActors().indexOf(mapButton, true);
                         stage.getActors().get(mapButtonIndex).setVisible(true);
                         int optButtonIndex = stage.getActors().indexOf(optButton, true);
                         stage.getActors().get(optButtonIndex).setVisible(true);
                         int hpBarIndex = stage.getActors().indexOf(playerHPBar, true);
                         stage.getActors().get(hpBarIndex).setVisible(true);
+                        int lvlIndex = stage.getActors().indexOf(floorLvlText, true);
+                        stage.getActors().get(lvlIndex).setVisible(true);
                         detectChangeArrows();
                     }
                 });
@@ -352,14 +363,14 @@ public class GameplayScreen implements Screen, InputProcessor {
                     @Override
                     public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                         assetManager.get("Button Push.mp3", Sound.class).play();
+                        for (int actors = 0; actors < stage.getActors().size; actors++) {
+                            stage.getActors().get(actors).addAction(Actions.removeActor());
+                        }
+
                         SaveFile saveFile = new SaveFile(newMap, mapDiscovered, enemies, playerChar,
                                 tiledMapWidth, tiledMapHeight, floorLevel);
                         saveFile.saveSaveData();
 
-                        assetManager.get("Button Push.mp3", Sound.class).play();
-                        for (int actors = 0; actors < stage.getActors().size; actors++) {
-                            stage.getActors().get(actors).addAction(Actions.removeActor());
-                        }
                         enemies.clear();
                         mapDiscovered.clear();
                         stage.dispose();
@@ -446,13 +457,27 @@ public class GameplayScreen implements Screen, InputProcessor {
                     newMap[playerChar.x][playerChar.y] = PLAYER;
                     updateMapDiscovered();
                     camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
-                } else if (newMap[playerChar.getX()][playerChar.getY() + 1] == EXIT) {
+                }
+                else if (newMap[playerChar.getX()][playerChar.getY() + 1] == HEART) {
+                    if ((playerChar.HP + 1) <= 15) {
+                        playerChar.HP = playerChar.HP + 1;
+                        playerHPBar.setValue(playerChar.HP);
+                        playerChar.setHpBeforeSave(playerChar.HP);
+                    }
+                    newMap[playerChar.getX()][playerChar.getY()] = FLOOR;
+                    playerChar.y = playerChar.getY() + 1;
+                    newMap[playerChar.x][playerChar.y] = PLAYER;
+                    updateMapDiscovered();
+                    camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
+                }
+                else if (newMap[playerChar.getX()][playerChar.getY() + 1] == EXIT) {
                     enemies.clear();
                     mapDiscovered.clear();
                     attackedEnemy = false;
                     assetManager.get("Floor Climb.mp3", Sound.class).play();
                     floorLevel = floorLevel + 1;
                     recreateWorld();
+                    floorLvlText.setText("Floor: " + floorLevel);
                     playerChar.setHpBeforeSave(playerChar.HP);
                     playerHPBar.setRange(0, playerChar.HP);
                     playerHPBar.setValue(playerChar.HP);
@@ -528,13 +553,28 @@ public class GameplayScreen implements Screen, InputProcessor {
                     newMap[playerChar.x][playerChar.y] = PLAYER;
                     updateMapDiscovered();
                     camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
-                } else if (newMap[playerChar.getX() + 1][playerChar.getY() + 1] == EXIT) {
+                }
+                else if (newMap[playerChar.getX() + 1][playerChar.getY() + 1] == HEART) {
+                    if ((playerChar.HP + 1) <= 15) {
+                        playerChar.HP = playerChar.HP + 1;
+                        playerHPBar.setValue(playerChar.HP);
+                        playerChar.setHpBeforeSave(playerChar.HP);
+                    }
+                    newMap[playerChar.getX()][playerChar.getY()] = FLOOR;
+                    playerChar.x = playerChar.getX() + 1;
+                    playerChar.y = playerChar.getY() + 1;
+                    newMap[playerChar.x][playerChar.y] = PLAYER;
+                    updateMapDiscovered();
+                    camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
+                }
+                else if (newMap[playerChar.getX() + 1][playerChar.getY() + 1] == EXIT) {
                     enemies.clear();
                     mapDiscovered.clear();
                     attackedEnemy = false;
                     assetManager.get("Floor Climb.mp3", Sound.class).play();
                     floorLevel = floorLevel + 1;
                     recreateWorld();
+                    floorLvlText.setText("Floor: " + floorLevel);
                     playerChar.setHpBeforeSave(playerChar.HP);
                     playerHPBar.setRange(0, playerChar.HP);
                     playerHPBar.setValue(playerChar.HP);
@@ -608,13 +648,27 @@ public class GameplayScreen implements Screen, InputProcessor {
                     newMap[playerChar.x][playerChar.y] = PLAYER;
                     updateMapDiscovered();
                     camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
-                } else if (newMap[playerChar.getX() + 1][playerChar.getY()] == EXIT) {
+                }
+                else if (newMap[playerChar.getX() + 1][playerChar.getY()] == HEART) {
+                    if ((playerChar.HP + 1) <= 15) {
+                        playerChar.HP = playerChar.HP + 1;
+                        playerHPBar.setValue(playerChar.HP);
+                        playerChar.setHpBeforeSave(playerChar.HP);
+                    }
+                    newMap[playerChar.getX()][playerChar.getY()] = FLOOR;
+                    playerChar.x = playerChar.getX() + 1;
+                    newMap[playerChar.x][playerChar.y] = PLAYER;
+                    updateMapDiscovered();
+                    camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
+                }
+                else if (newMap[playerChar.getX() + 1][playerChar.getY()] == EXIT) {
                     enemies.clear();
                     mapDiscovered.clear();
                     attackedEnemy = false;
                     assetManager.get("Floor Climb.mp3", Sound.class).play();
                     floorLevel = floorLevel + 1;
                     recreateWorld();
+                    floorLvlText.setText("Floor: " + floorLevel);
                     playerChar.setHpBeforeSave(playerChar.HP);
                     playerHPBar.setRange(0, playerChar.HP);
                     playerHPBar.setValue(playerChar.HP);
@@ -690,13 +744,28 @@ public class GameplayScreen implements Screen, InputProcessor {
                     newMap[playerChar.x][playerChar.y] = PLAYER;
                     updateMapDiscovered();
                     camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
-                } else if (newMap[playerChar.getX() + 1][playerChar.getY() - 1] == EXIT) {
+                }
+                else if (newMap[playerChar.getX() + 1][playerChar.getY() - 1] == HEART) {
+                    if ((playerChar.HP + 1) <= 15) {
+                        playerChar.HP = playerChar.HP + 1;
+                        playerHPBar.setValue(playerChar.HP);
+                        playerChar.setHpBeforeSave(playerChar.HP);
+                    }
+                    newMap[playerChar.getX()][playerChar.getY()] = FLOOR;
+                    playerChar.x = playerChar.getX() + 1;
+                    playerChar.y = playerChar.getY() - 1;
+                    newMap[playerChar.x][playerChar.y] = PLAYER;
+                    updateMapDiscovered();
+                    camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
+                }
+                else if (newMap[playerChar.getX() + 1][playerChar.getY() - 1] == EXIT) {
                     enemies.clear();
                     mapDiscovered.clear();
                     attackedEnemy = false;
                     assetManager.get("Floor Climb.mp3", Sound.class).play();
                     floorLevel = floorLevel + 1;
                     recreateWorld();
+                    floorLvlText.setText("Floor: " + floorLevel);
                     playerChar.setHpBeforeSave(playerChar.HP);
                     playerHPBar.setRange(0, playerChar.HP);
                     playerHPBar.setValue(playerChar.HP);
@@ -770,13 +839,27 @@ public class GameplayScreen implements Screen, InputProcessor {
                     newMap[playerChar.x][playerChar.y] = PLAYER;
                     updateMapDiscovered();
                     camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
-                } else if (newMap[playerChar.getX()][playerChar.getY() - 1] == EXIT) {
+                }
+                else if (newMap[playerChar.getX()][playerChar.getY() - 1] == HEART) {
+                    if ((playerChar.HP + 1) <= 15) {
+                        playerChar.HP = playerChar.HP + 1;
+                        playerHPBar.setValue(playerChar.HP);
+                        playerChar.setHpBeforeSave(playerChar.HP);
+                    }
+                    newMap[playerChar.getX()][playerChar.getY()] = FLOOR;
+                    playerChar.y = playerChar.getY() - 1;
+                    newMap[playerChar.x][playerChar.y] = PLAYER;
+                    updateMapDiscovered();
+                    camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
+                }
+                else if (newMap[playerChar.getX()][playerChar.getY() - 1] == EXIT) {
                     enemies.clear();
                     mapDiscovered.clear();
                     attackedEnemy = false;
                     assetManager.get("Floor Climb.mp3", Sound.class).play();
                     floorLevel = floorLevel + 1;
                     recreateWorld();
+                    floorLvlText.setText("Floor: " + floorLevel);
                     playerChar.setHpBeforeSave(playerChar.HP);
                     playerHPBar.setRange(0, playerChar.HP);
                     playerHPBar.setValue(playerChar.HP);
@@ -852,13 +935,28 @@ public class GameplayScreen implements Screen, InputProcessor {
                     newMap[playerChar.x][playerChar.y] = PLAYER;
                     updateMapDiscovered();
                     camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
-                } else if (newMap[playerChar.getX() - 1][playerChar.getY() - 1] == EXIT) {
+                }
+                else if (newMap[playerChar.getX() - 1][playerChar.getY() - 1] == HEART) {
+                    if ((playerChar.HP + 1) <= 15) {
+                        playerChar.HP = playerChar.HP + 1;
+                        playerHPBar.setValue(playerChar.HP);
+                        playerChar.setHpBeforeSave(playerChar.HP);
+                    }
+                    newMap[playerChar.getX()][playerChar.getY()] = FLOOR;
+                    playerChar.x = playerChar.getX() - 1;
+                    playerChar.y = playerChar.getY() - 1;
+                    newMap[playerChar.x][playerChar.y] = PLAYER;
+                    updateMapDiscovered();
+                    camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
+                }
+                else if (newMap[playerChar.getX() - 1][playerChar.getY() - 1] == EXIT) {
                     enemies.clear();
                     mapDiscovered.clear();
                     attackedEnemy = false;
                     assetManager.get("Floor Climb.mp3", Sound.class).play();
                     floorLevel = floorLevel + 1;
                     recreateWorld();
+                    floorLvlText.setText("Floor: " + floorLevel);
                     playerChar.setHpBeforeSave(playerChar.HP);
                     playerHPBar.setRange(0, playerChar.HP);
                     playerHPBar.setValue(playerChar.HP);
@@ -931,13 +1029,27 @@ public class GameplayScreen implements Screen, InputProcessor {
                     newMap[playerChar.x][playerChar.y] = PLAYER;
                     updateMapDiscovered();
                     camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
-                } else if (newMap[playerChar.getX() - 1][playerChar.getY()] == EXIT) {
+                }
+                else if (newMap[playerChar.getX() - 1][playerChar.getY()] == HEART) {
+                    if ((playerChar.HP + 1) <= 15) {
+                        playerChar.HP = playerChar.HP + 1;
+                        playerHPBar.setValue(playerChar.HP);
+                        playerChar.setHpBeforeSave(playerChar.HP);
+                    }
+                    newMap[playerChar.getX()][playerChar.getY()] = FLOOR;
+                    playerChar.y = playerChar.getX() - 1;
+                    newMap[playerChar.x][playerChar.y] = PLAYER;
+                    updateMapDiscovered();
+                    camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
+                }
+                else if (newMap[playerChar.getX() - 1][playerChar.getY()] == EXIT) {
                     enemies.clear();
                     mapDiscovered.clear();
                     attackedEnemy = false;
                     assetManager.get("Floor Climb.mp3", Sound.class).play();
                     floorLevel = floorLevel + 1;
                     recreateWorld();
+                    floorLvlText.setText("Floor: " + floorLevel);
                     playerChar.setHpBeforeSave(playerChar.HP);
                     playerHPBar.setRange(0, playerChar.HP);
                     playerHPBar.setValue(playerChar.HP);
@@ -1012,13 +1124,28 @@ public class GameplayScreen implements Screen, InputProcessor {
                     newMap[playerChar.x][playerChar.y] = PLAYER;
                     updateMapDiscovered();
                     camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
-                } else if (newMap[playerChar.getX() - 1][playerChar.getY() + 1] == EXIT) {
+                }
+                else if (newMap[playerChar.getX() - 1][playerChar.getY() + 1] == HEART) {
+                    if ((playerChar.HP + 1) <= 15) {
+                        playerChar.HP = playerChar.HP + 1;
+                        playerHPBar.setValue(playerChar.HP);
+                        playerChar.setHpBeforeSave(playerChar.HP);
+                    }
+                    newMap[playerChar.getX()][playerChar.getY()] = FLOOR;
+                    playerChar.x = playerChar.getX() - 1;
+                    playerChar.y = playerChar.getY() + 1;
+                    newMap[playerChar.x][playerChar.y] = PLAYER;
+                    updateMapDiscovered();
+                    camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
+                }
+                else if (newMap[playerChar.getX() - 1][playerChar.getY() + 1] == EXIT) {
                     enemies.clear();
                     mapDiscovered.clear();
                     attackedEnemy = false;
                     assetManager.get("Floor Climb.mp3", Sound.class).play();
                     floorLevel = floorLevel + 1;
                     recreateWorld();
+                    floorLvlText.setText("Floor: " + floorLevel);
                     playerChar.setHpBeforeSave(playerChar.HP);
                     playerHPBar.setRange(0, playerChar.HP);
                     playerHPBar.setValue(playerChar.HP);
@@ -1212,24 +1339,11 @@ public class GameplayScreen implements Screen, InputProcessor {
     }
 
     public void floodFill(int[][] node, int x, int y, int target, int replace) {
-        // if the tile read is outside of tilemapwidth and tilemapheight then return
-        if (x <= 0 || x >= tiledMapWidth) {
+        if (x < 0 || x >= tiledMapWidth || y < 0 || y >= tiledMapHeight ||
+                node[x][y] != target) {
             return;
         }
-        if (y <= 0 || y >= tiledMapHeight) {
-            return;
-        }
-        // if the tile read isn't a floor tile then return
-        if (node[x][y] != target) {
-            return;
-        }
-        // if the tile read is a floor and has already been checked then return
-        if (target == replace) {
-            return;
-        }
-        // otherwise replace the floor tile at that xy position as read
         node[x][y] = replace;
-        // now check the surrounding tiles to see if they have been read or not
         floodFill(node, x - 1, y - 1, target, replace); //bot left
         floodFill(node, x - 1, y, target, replace);   //left
         floodFill(node, x - 1, y + 1, target, replace); //top left
@@ -1310,8 +1424,8 @@ public class GameplayScreen implements Screen, InputProcessor {
     Outputs: None
      */
     public void recreateWorld() {
-        tiledMapWidth = randInt(10 + (5 * floorLevel), 10 + (10 * floorLevel));
-        tiledMapHeight = randInt(5 + (5 * floorLevel), 10 + (10 * floorLevel));
+        tiledMapWidth = randInt(10 + (5 * floorLevel), 10 + (8 * floorLevel));
+        tiledMapHeight = randInt(5 + (5 * floorLevel), 10 + (8 * floorLevel));
         mapDiscovered = new ArrayList<Vector2>();
 
         //reinitialize the player character and enemy stats
@@ -1354,6 +1468,23 @@ public class GameplayScreen implements Screen, InputProcessor {
             ranPosY = randInt(1, (tiledMapHeight - 1));
         }
         newMap[ranPosX][ranPosY] = EXIT;
+
+        if (floorLevel >= 3) {
+            for (int i = 0; i < 3; i++) {
+                while (newMap[ranPosX][ranPosY] != FLOOR) {
+                    ranPosX = randInt(1, (tiledMapWidth - 1));
+                    ranPosY = randInt(1, (tiledMapHeight - 1));
+                }
+                newMap[ranPosX][ranPosY] = HEART;
+            }
+        }
+        else {
+            while (newMap[ranPosX][ranPosY] != FLOOR) {
+                ranPosX = randInt(1, (tiledMapWidth - 1));
+                ranPosY = randInt(1, (tiledMapHeight - 1));
+            }
+            newMap[ranPosX][ranPosY] = HEART;
+        }
     }
 
     public Vector2 ghettoAStar(Node start, Node goal) {
@@ -1371,6 +1502,7 @@ public class GameplayScreen implements Screen, InputProcessor {
         }
         Arrays.sort(nodeCosts);
         int closest = nodeCosts[0];
+        if(closest == 0) { return null; }
         for (int j = 0; j < neighbours.size; j++) {
             if (neighbours.get(j).getgScore() == closest) {
                 return new Vector2(neighbours.get(j).getCurrentX(), neighbours.get(j).getCurrentY());
@@ -1483,13 +1615,12 @@ public class GameplayScreen implements Screen, InputProcessor {
 
                     // wall
                     case 1:
-                        //background
+
                         Color c = stage.getBatch().getColor();
                         stage.getBatch().setColor(c.r, c.g, c.b, 1f); //set alpha to 1
                         stage.getBatch().draw(floorTex, mapDiscovered.get(i).x * TEXTURESIZE,
                                 mapDiscovered.get(i).y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
-                        //foreground
-                        c = stage.getBatch().getColor();
+
                         stage.getBatch().setColor(c.r, c.g, c.b, 1f);//set alpha to 1
                         stage.getBatch().draw(wallTex, mapDiscovered.get(i).x * TEXTURESIZE,
                                 mapDiscovered.get(i).y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
@@ -1497,13 +1628,12 @@ public class GameplayScreen implements Screen, InputProcessor {
 
                     // player
                     case 2:
-                        //background
+
                         c = stage.getBatch().getColor();
                         stage.getBatch().setColor(c.r, c.g, c.b, 1f); //set alpha to 1
                         stage.getBatch().draw(floorTex, playerChar.x * TEXTURESIZE,
                                 playerChar.y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
-                        //foreground
-                        c = stage.getBatch().getColor();
+
                         stage.getBatch().setColor(c.r, c.g, c.b, 1f);//set alpha to 1
                         stage.getBatch().draw(playerIdleCurrentFrame, playerChar.x * TEXTURESIZE,
                                 playerChar.y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
@@ -1517,15 +1647,27 @@ public class GameplayScreen implements Screen, InputProcessor {
 
                     // portal
                     case 4:
-                        //background
+
                         c = stage.getBatch().getColor();
                         stage.getBatch().setColor(c.r, c.g, c.b, 1f); //set alpha to 1
                         stage.getBatch().draw(floorTex, mapDiscovered.get(i).x * TEXTURESIZE,
                                 mapDiscovered.get(i).y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
-                        //foreground
-                        c = stage.getBatch().getColor();
+
                         stage.getBatch().setColor(c.r, c.g, c.b, 1f);//set alpha to 0.3
                         stage.getBatch().draw(portalTex, mapDiscovered.get(i).x * TEXTURESIZE,
+                                mapDiscovered.get(i).y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
+                        break;
+
+                    // heart
+                    case 5:
+
+                        c = stage.getBatch().getColor();
+                        stage.getBatch().setColor(c.r, c.g, c.b, 1f); //set alpha to 1
+                        stage.getBatch().draw(floorTex, mapDiscovered.get(i).x * TEXTURESIZE,
+                                mapDiscovered.get(i).y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
+
+                        stage.getBatch().setColor(c.r, c.g, c.b, 1f);//set alpha to 0.3
+                        stage.getBatch().draw(heartTex, mapDiscovered.get(i).x * TEXTURESIZE,
                                 mapDiscovered.get(i).y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
                         break;
                 }
@@ -1546,13 +1688,12 @@ public class GameplayScreen implements Screen, InputProcessor {
 
                         // wall
                         case 1:
-                            //background
+
                             Color c = stage.getBatch().getColor();
                             stage.getBatch().setColor(c.r, c.g, c.b, 1f); //set alpha to 1
                             stage.getBatch().draw(floorTex, i * TEXTURESIZE, j * TEXTURESIZE,
                                     TEXTURESIZE, TEXTURESIZE);
-                            //foreground
-                            c = stage.getBatch().getColor();
+
                             stage.getBatch().setColor(c.r, c.g, c.b, 1f);//set alpha to 1
                             stage.getBatch().draw(wallTex, i * TEXTURESIZE, j * TEXTURESIZE,
                                     TEXTURESIZE, TEXTURESIZE);
@@ -1562,36 +1703,33 @@ public class GameplayScreen implements Screen, InputProcessor {
                         case 2:
                             if (attackedEnemy) {
                                 if (playerChar.getX() > enemyX) {
-                                    //background
+
                                     c = stage.getBatch().getColor();
                                     stage.getBatch().setColor(c.r, c.g, c.b, 1f); //set alpha to 1
                                     stage.getBatch().draw(floorTex, playerChar.x * TEXTURESIZE,
                                             playerChar.y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
-                                    //foreground
-                                    c = stage.getBatch().getColor();
+
                                     stage.getBatch().setColor(c.r, c.g, c.b, 1f);//set alpha to 0.3
                                     stage.getBatch().draw(playerAtkLeftTex, playerChar.x * TEXTURESIZE,
                                             playerChar.y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
                                 } else {
-                                    //background
+
                                     c = stage.getBatch().getColor();
                                     stage.getBatch().setColor(c.r, c.g, c.b, 1f); //set alpha to 1
                                     stage.getBatch().draw(floorTex, playerChar.x * TEXTURESIZE,
                                             playerChar.y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
-                                    //foreground
-                                    c = stage.getBatch().getColor();
+
                                     stage.getBatch().setColor(c.r, c.g, c.b, 1f);//set alpha to 0.3
                                     stage.getBatch().draw(playerAtkRightTex, playerChar.x * TEXTURESIZE,
                                             playerChar.y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
                                 }
                             } else {
-                                //background
+
                                 c = stage.getBatch().getColor();
                                 stage.getBatch().setColor(c.r, c.g, c.b, 1f); //set alpha to 1
                                 stage.getBatch().draw(floorTex, playerChar.x * TEXTURESIZE,
                                         playerChar.y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
-                                //foreground
-                                c = stage.getBatch().getColor();
+
                                 stage.getBatch().setColor(c.r, c.g, c.b, 1f);//set alpha to 0.3
                                 stage.getBatch().draw(playerIdleCurrentFrame, playerChar.x * TEXTURESIZE,
                                         playerChar.y * TEXTURESIZE, TEXTURESIZE, TEXTURESIZE);
@@ -1601,24 +1739,22 @@ public class GameplayScreen implements Screen, InputProcessor {
                         // enemy
                         case 3:
                             if (attackedPlayer) {
-                                //background
+
                                 c = stage.getBatch().getColor();
                                 stage.getBatch().setColor(c.r, c.g, c.b, 1f); //set alpha to 1
                                 stage.getBatch().draw(floorTex, i * TEXTURESIZE, j * TEXTURESIZE,
                                         TEXTURESIZE, TEXTURESIZE);
-                                //foreground
-                                c = stage.getBatch().getColor();
+
                                 stage.getBatch().setColor(c.r, c.g, c.b, 1f);//set alpha to 0.3
                                 stage.getBatch().draw(enemyAtkTex, i * TEXTURESIZE, j * TEXTURESIZE,
                                         TEXTURESIZE, TEXTURESIZE);
                             } else {
-                                //background
+
                                 c = stage.getBatch().getColor();
                                 stage.getBatch().setColor(c.r, c.g, c.b, 1f); //set alpha to 1
                                 stage.getBatch().draw(floorTex, i * TEXTURESIZE, j * TEXTURESIZE,
                                         TEXTURESIZE, TEXTURESIZE);
-                                //foreground
-                                c = stage.getBatch().getColor();
+
                                 stage.getBatch().setColor(c.r, c.g, c.b, 1f);//set alpha to 0.3
                                 stage.getBatch().draw(enemyIdleTex, i * TEXTURESIZE, j * TEXTURESIZE,
                                         TEXTURESIZE, TEXTURESIZE);
@@ -1627,15 +1763,27 @@ public class GameplayScreen implements Screen, InputProcessor {
 
                         // portal
                         case 4:
-                            //background
+
                             c = stage.getBatch().getColor();
                             stage.getBatch().setColor(c.r, c.g, c.b, 1f); //set alpha to 1
                             stage.getBatch().draw(floorTex, i * TEXTURESIZE, j * TEXTURESIZE,
                                     TEXTURESIZE, TEXTURESIZE);
-                            //foreground
-                            c = stage.getBatch().getColor();
+
                             stage.getBatch().setColor(c.r, c.g, c.b, 1f);//set alpha to 0.3
                             stage.getBatch().draw(portalTex, i * TEXTURESIZE, j * TEXTURESIZE,
+                                    TEXTURESIZE, TEXTURESIZE);
+                            break;
+
+                        // heart
+                        case 5:
+
+                            c = stage.getBatch().getColor();
+                            stage.getBatch().setColor(c.r, c.g, c.b, 1f); //set alpha to 1
+                            stage.getBatch().draw(floorTex, i * TEXTURESIZE, j * TEXTURESIZE,
+                                    TEXTURESIZE, TEXTURESIZE);
+
+                            stage.getBatch().setColor(c.r, c.g, c.b, 1f);//set alpha to 0.3
+                            stage.getBatch().draw(heartTex, i * TEXTURESIZE, j * TEXTURESIZE,
                                     TEXTURESIZE, TEXTURESIZE);
                             break;
                     }
@@ -1700,6 +1848,8 @@ public class GameplayScreen implements Screen, InputProcessor {
         for (int actors = 0; actors < stage.getActors().size; actors++) {
             stage.getActors().get(actors).addAction(Actions.removeActor());
         }
+        enemies.clear();
+        mapDiscovered.clear();
         gameOver = true;
 
         SaveFile highScoreFile = new SaveFile();
@@ -1719,7 +1869,6 @@ public class GameplayScreen implements Screen, InputProcessor {
 
             @Override
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
-
                 game.setScreen(new MainMenuScreen(game));
             }
         });
@@ -1736,9 +1885,6 @@ public class GameplayScreen implements Screen, InputProcessor {
     public void enemyTurn() {
         //enemies move towards the player one step at a time too
         for (int i = 0; i < enemies.size; i++) {
-            if (enemies.size <= 0) {
-                break;
-            }
 
             //initialize a goal node
             goalNode = new Node();
@@ -1750,26 +1896,6 @@ public class GameplayScreen implements Screen, InputProcessor {
             startNode.setCurrentX(enemies.get(i).getX());
             startNode.setCurrentY(enemies.get(i).getY());
 
-            /*
-            //create the path from the enemy to the player
-            //and if the enemy is beside the player or the path is null
-            //then move onto the next enemy in the array
-            path = aStarPathFinding(startNode, goalNode);
-            if (path == null || path.size == 0) {
-                // the enemy will do nothing if the path doesn't exist
-            }
-            else if (path.size == 1) {
-                attackedPlayer = true;
-                assetManager.get("Attacked.mp3", Sound.class).play(0.5f);
-                playerChar.takeDamage(enemies.get(i).ATK);
-                playerHPBar.setValue(playerChar.HP);
-                if (playerChar.isDead()) {
-                    gameOver = true;
-                    playerDead();
-                }
-            }
-            else {
-            */
             Vector2 closeNode = ghettoAStar(startNode, goalNode);
             if (closeNode.x == goalNode.getCurrentX() &&
                     closeNode.y == goalNode.getCurrentY()) {
@@ -1782,41 +1908,19 @@ public class GameplayScreen implements Screen, InputProcessor {
                     playerDead();
                 }
             }
+            else if (closeNode == null) {
+                return;
+            }
             else {
-                attackedPlayer = false;
-                //move the enemy units one tile closer to the player
-                newMap[enemies.get(i).x][enemies.get(i).y] = FLOOR;
-                enemies.get(i).x = (int) closeNode.x;
-                enemies.get(i).y = (int) closeNode.y;
-                newMap[enemies.get(i).x][enemies.get(i).y] = ENEMY;
+                    attackedPlayer = false;
+                    //move the enemy units one tile closer to the player
+                    newMap[enemies.get(i).x][enemies.get(i).y] = FLOOR;
+                    enemies.get(i).x = (int) closeNode.x;
+                    enemies.get(i).y = (int) closeNode.y;
+                    newMap[enemies.get(i).x][enemies.get(i).y] = ENEMY;
             }
-            /*
-            if((goalNode.getCurrentX() % closeNode.x == 1) ||
-                    (goalNode.getCurrentY() % closeNode.y == 1)) {
-                attackedPlayer = true;
-                assetManager.get("Attacked.mp3", Sound.class).play(0.5f);
-                playerChar.takeDamage(enemies.get(i).ATK);
-                playerHPBar.setValue(playerChar.HP);
-                if (playerChar.isDead()) {
-                    gameOver = true;
-                    playerDead();
-                }
-            }
-            */
-
-
-            /*
-            attackedPlayer = false;
-            //move the enemy units one tile closer to the player
-            newMap[enemies.get(i).x][enemies.get(i).y] = FLOOR;
-            enemies.get(i).x = (int) closeNode.x;
-            enemies.get(i).y = (int) closeNode.y;
-            newMap[enemies.get(i).x][enemies.get(i).y] = ENEMY;
-            */
         }
-        //path = null;
     }
-
 
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {

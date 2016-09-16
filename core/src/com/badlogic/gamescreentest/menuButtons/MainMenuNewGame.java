@@ -4,9 +4,6 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 
-/**
- * Created by admin on 6/9/2016.
- */
 public class MainMenuNewGame extends Actor {
     private Texture img;
     private float x;
@@ -20,7 +17,7 @@ public class MainMenuNewGame extends Actor {
         y = cellHeight;
         width = cellWidth;
         height = cellHeight;
-        this.setBounds(x, y, width, width);
+        this.setBounds(x, y, width, height);
     }
 
     @Override

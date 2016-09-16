@@ -22,7 +22,6 @@ public class MainMenuScreen implements Screen {
     OrthographicCamera camera;
     Stage stage;
     AssetManager assetManager;
-    SaveFile saveFile;
     Label text;
     Label.LabelStyle textStyle;
     BitmapFont font;
@@ -61,7 +60,6 @@ public class MainMenuScreen implements Screen {
         contButton.addListener(new InputListener() {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                System.out.println("neutralface.jpg touched");
                 return true;
             }
 
@@ -69,7 +67,7 @@ public class MainMenuScreen implements Screen {
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                 assetManager.get("Button Push.mp3", Sound.class).play();
                 //continue from the save file
-                saveFile = new SaveFile();
+                SaveFile saveFile = new SaveFile();
                 if(saveFile.saveFilesExist()) {
                     dispose();
                     game.setNewGame(false);
@@ -82,6 +80,7 @@ public class MainMenuScreen implements Screen {
                     text = new Label("No save files found!", textStyle);
                     text.setPosition(screenWidth/3, cellHeight - (cellHeight/2));
                     text.addAction(Actions.fadeOut(3));
+                    text.addAction(Actions.after(Actions.removeActor()));
                     stage.addActor(text);
                 }
             }
@@ -93,7 +92,6 @@ public class MainMenuScreen implements Screen {
         quitButton.addListener(new InputListener() {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                System.out.println("sadface.jpg touched");
                 return true;
             }
 
@@ -111,7 +109,6 @@ public class MainMenuScreen implements Screen {
         newGameButton.addListener(new InputListener() {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                System.out.println("happyface.jpg touched");
                 return true;
             }
 

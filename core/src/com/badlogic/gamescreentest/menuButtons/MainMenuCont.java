@@ -5,9 +5,6 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.EventListener;
 
-/**
- * Created by admin on 6/9/2016.
- */
 public class MainMenuCont extends Actor {
     private Texture img;
     private float x;
@@ -21,7 +18,7 @@ public class MainMenuCont extends Actor {
         y = cellHeight;
         width = cellWidth;
         height = cellHeight;
-        this.setBounds(x, y, width, width);
+        this.setBounds(x, y, width, height);
     }
 
     @Override

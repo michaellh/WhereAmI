@@ -4,9 +4,6 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 
-/**
- * Created by admin on 7/27/2016.
- */
 public class gameOptions extends Actor {
     Texture img;
     float x;

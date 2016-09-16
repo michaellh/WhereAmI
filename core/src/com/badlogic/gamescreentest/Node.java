@@ -5,7 +5,6 @@ public class Node implements Comparable<Node>{
     int currentY;
     int gScore;
     int fScore;
-    Node parent;
 
     public int getCurrentX() {
         return currentX;
@@ -31,20 +30,8 @@ public class Node implements Comparable<Node>{
         return gScore;
     }
 
-    public void setfScore(int f) {
-        fScore = f;
-    }
-
     public int getfScore() {
         return fScore;
-    }
-
-    public void setParent(Node node) {
-        parent = node;
-    }
-
-    public Node getParent() {
-        return parent;
     }
 
     @Override

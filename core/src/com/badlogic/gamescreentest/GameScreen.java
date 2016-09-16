@@ -58,6 +58,7 @@ public class GameScreen extends Game {
 		assetManager.load("attackLeftButton.png", Texture.class);
 		assetManager.load("attackTopLeftButton.png", Texture.class);
 		assetManager.load("GameOver.jpg", Texture.class);
+		assetManager.load("heart.png", Texture.class);
 		assetManager.finishLoading();
 
 		batch = new SpriteBatch();
