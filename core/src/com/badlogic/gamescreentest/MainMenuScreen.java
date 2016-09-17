@@ -69,6 +69,7 @@ public class MainMenuScreen implements Screen {
                 //continue from the save file
                 SaveFile saveFile = new SaveFile();
                 if(saveFile.saveFilesExist()) {
+                    Gdx.graphics.setContinuousRendering(true);
                     dispose();
                     game.setNewGame(false);
                     game.setScreen(new GameplayScreen(game));
@@ -115,12 +116,15 @@ public class MainMenuScreen implements Screen {
             @Override
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                 assetManager.get("Button Push.mp3", Sound.class).play();
+                Gdx.graphics.setContinuousRendering(true);
                 dispose();
                 game.setNewGame(true);
                 game.setScreen(new GameplayScreen(game));
             }
         });
         stage.addActor(newGameButton);
+
+        Gdx.graphics.setContinuousRendering(false);
 
         Gdx.input.setInputProcessor(stage);
     }

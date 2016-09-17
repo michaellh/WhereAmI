@@ -88,7 +88,7 @@ public class GameplayScreen implements Screen, InputProcessor {
     Node startNode, goalNode;
 
     float screenWidth, screenHeight, cellWidth, cellHeight;
-    int tiledMapWidth, tiledMapHeight;
+    int tiledMapWidth, tiledMapHeight, tile;
     int FLOOR, WALL, PLAYER, ENEMY, EXIT, HEART, TEXTURESIZE;
     int wallCount, floorLevel;
     int enemyX;
@@ -245,6 +245,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                 camera.setToOrtho(false, screenWidth, screenHeight);
                 camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
                 mapPressed = true;
+                Gdx.graphics.setContinuousRendering(false);
 
                 // Adds a map exit button in map mode to the stage
                 mapExit = new MapExit(mapExitTex, cellWidth, cellHeight);
@@ -260,6 +261,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                     public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                         assetManager.get("Button Push.mp3", Sound.class).play();
                         mapPressed = false;
+                        Gdx.graphics.setContinuousRendering(true);
 
                         // Sets the camera back to game mode view
                         camera.setToOrtho(false, 14 * TEXTURESIZE, 10 * TEXTURESIZE);
@@ -348,6 +350,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                         detectChangeArrows();
 
                         options = false;
+                        Gdx.graphics.setContinuousRendering(true);
                     }
                 });
                 stage.addActor(resumeGameOption);
@@ -402,6 +405,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                                 assetManager.get("Button Push.mp3", Sound.class).play();
                                 aboutSection.addAction(Actions.removeActor());
+                                Gdx.graphics.setContinuousRendering(true);
                             }
                         });
                         stage.addActor(aboutSection);
@@ -430,6 +434,8 @@ public class GameplayScreen implements Screen, InputProcessor {
                     }
                 });
                 stage.addActor(quitGameOption);
+
+                Gdx.graphics.setContinuousRendering(false);
             }
         });
         stage.addActor(optButton);
@@ -1672,7 +1678,8 @@ public class GameplayScreen implements Screen, InputProcessor {
                         break;
                 }
             }
-        } else {
+        }
+        else {
             for (int i = (playerChar.getX() - (8)); i < (playerChar.getX() + (9)); i++) {
                 for (int j = (playerChar.getY() - (5)); j < (playerChar.getY() + (6)); j++) {
                     if (i < 0 || i >= tiledMapWidth || j < 0 || j >= tiledMapHeight) {
@@ -1880,6 +1887,8 @@ public class GameplayScreen implements Screen, InputProcessor {
         Label text = new Label(floorLevel + "\n\n" + highScore, textStyle);
         text.setPosition(cellWidth * 8, cellHeight * 2.45f);
         stage.addActor(text);
+
+        Gdx.graphics.setContinuousRendering(false);
     }
 
     public void enemyTurn() {
@@ -1907,9 +1916,6 @@ public class GameplayScreen implements Screen, InputProcessor {
                     gameOver = true;
                     playerDead();
                 }
-            }
-            else if (closeNode == null) {
-                return;
             }
             else {
                     attackedPlayer = false;
