@@ -88,7 +88,7 @@ public class GameplayScreen implements Screen, InputProcessor {
     Node startNode, goalNode;
 
     float screenWidth, screenHeight, cellWidth, cellHeight;
-    int tiledMapWidth, tiledMapHeight, tile;
+    int tiledMapWidth, tiledMapHeight;
     int FLOOR, WALL, PLAYER, ENEMY, EXIT, HEART, TEXTURESIZE;
     int wallCount, floorLevel;
     int enemyX;
@@ -1043,7 +1043,7 @@ public class GameplayScreen implements Screen, InputProcessor {
                         playerChar.setHpBeforeSave(playerChar.HP);
                     }
                     newMap[playerChar.getX()][playerChar.getY()] = FLOOR;
-                    playerChar.y = playerChar.getX() - 1;
+                    playerChar.x = playerChar.getX() - 1;
                     newMap[playerChar.x][playerChar.y] = PLAYER;
                     updateMapDiscovered();
                     camera.position.set(playerChar.x * TEXTURESIZE, playerChar.y * TEXTURESIZE, 0);
