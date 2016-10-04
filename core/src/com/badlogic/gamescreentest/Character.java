@@ -1,16 +1,11 @@
 package com.badlogic.gamescreentest;
 
-/**
- * Created by admin on 7/9/2016.
- */
 public class Character {
     int x;
     int y;
 
     int HP;
     int ATK;
-    int DEF;
-    int LUK;
 
     public int getX() {
         return x;
@@ -21,7 +16,7 @@ public class Character {
     }
 
     public void takeDamage(int dmg) {
-        this.HP = (this.HP + this.DEF) - dmg;
+        this.HP = this.HP - dmg;
     }
 
     public boolean isDead() {

@@ -4,9 +4,6 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 
-/**
- * Created by admin on 8/8/2016.
- */
 public class MapSeePlayer extends Actor {
     Texture img;
     float x;
